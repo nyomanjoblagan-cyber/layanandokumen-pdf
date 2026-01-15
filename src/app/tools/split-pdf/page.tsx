@@ -113,8 +113,6 @@ export default function SplitPdfPage() {
             }
         }
         setThumbnails(thumbs);
-        // Default: Pilih semua halaman di awal? Atau kosong? Kosong aja biar user milih.
-        // setSelectedPages(thumbs.map((_, i) => i)); 
 
     } catch (error) {
         console.error(error);
@@ -162,7 +160,10 @@ export default function SplitPdfPage() {
         copiedPages.forEach((page) => newPdf.addPage(page));
 
         const pdfBytes = await newPdf.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        
+        // FIX: Tambahkan 'as any' pada pdfBytes
+        const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+        
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
 
