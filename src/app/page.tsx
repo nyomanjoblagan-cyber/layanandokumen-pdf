@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { 
   Search, Menu, X, Zap, 
   Layers, ShieldCheck, FileText, 
-  Github, Twitter, Mail, MapPin, ArrowRight,
-  TrendingUp, Star, FileImage, Globe
+  Github, Twitter, Mail, ArrowRight,
+  TrendingUp, FileImage, Globe
 } from 'lucide-react';
 import { TOOLS, Language } from '@/data/tools';
+import AdsterraBanner from '@/components/AdsterraBanner';
 
 export default function Home() {
   const [lang, setLang] = useState<Language>('id');
@@ -40,6 +41,65 @@ export default function Home() {
     { name: 'Security', label: { id: 'Keamanan', en: 'Security' }, match: ['Keamanan'], icon: ShieldCheck },
   ];
 
+  // --- PALET WARNA UNTUK TIAP KOTAK TOOLS ---
+  // Kita putar warna ini berdasarkan urutan tool biar warna-warni
+  const COLOR_THEMES = [
+    { // 1. Biru
+      border: 'border-blue-200 hover:border-blue-500',
+      bg_grad: 'bg-gradient-to-br from-white to-blue-50 hover:to-blue-100',
+      icon_box: 'bg-white border-blue-100 text-blue-600',
+      icon_hover: 'group-hover:bg-blue-600 group-hover:text-white',
+      title_hover: 'group-hover:text-blue-700',
+      btn_bg: 'text-blue-500 group-hover:bg-blue-600',
+      watermark: 'text-blue-200'
+    },
+    { // 2. Hijau (Emerald)
+      border: 'border-emerald-200 hover:border-emerald-500',
+      bg_grad: 'bg-gradient-to-br from-white to-emerald-50 hover:to-emerald-100',
+      icon_box: 'bg-white border-emerald-100 text-emerald-600',
+      icon_hover: 'group-hover:bg-emerald-600 group-hover:text-white',
+      title_hover: 'group-hover:text-emerald-700',
+      btn_bg: 'text-emerald-500 group-hover:bg-emerald-600',
+      watermark: 'text-emerald-200'
+    },
+    { // 3. Ungu (Violet)
+      border: 'border-violet-200 hover:border-violet-500',
+      bg_grad: 'bg-gradient-to-br from-white to-violet-50 hover:to-violet-100',
+      icon_box: 'bg-white border-violet-100 text-violet-600',
+      icon_hover: 'group-hover:bg-violet-600 group-hover:text-white',
+      title_hover: 'group-hover:text-violet-700',
+      btn_bg: 'text-violet-500 group-hover:bg-violet-600',
+      watermark: 'text-violet-200'
+    },
+    { // 4. Orange (Amber)
+      border: 'border-amber-200 hover:border-amber-500',
+      bg_grad: 'bg-gradient-to-br from-white to-amber-50 hover:to-amber-100',
+      icon_box: 'bg-white border-amber-100 text-amber-600',
+      icon_hover: 'group-hover:bg-amber-600 group-hover:text-white',
+      title_hover: 'group-hover:text-amber-700',
+      btn_bg: 'text-amber-500 group-hover:bg-amber-600',
+      watermark: 'text-amber-200'
+    },
+    { // 5. Merah (Rose)
+      border: 'border-rose-200 hover:border-rose-500',
+      bg_grad: 'bg-gradient-to-br from-white to-rose-50 hover:to-rose-100',
+      icon_box: 'bg-white border-rose-100 text-rose-600',
+      icon_hover: 'group-hover:bg-rose-600 group-hover:text-white',
+      title_hover: 'group-hover:text-rose-700',
+      btn_bg: 'text-rose-500 group-hover:bg-rose-600',
+      watermark: 'text-rose-200'
+    },
+    { // 6. Cyan
+      border: 'border-cyan-200 hover:border-cyan-500',
+      bg_grad: 'bg-gradient-to-br from-white to-cyan-50 hover:to-cyan-100',
+      icon_box: 'bg-white border-cyan-100 text-cyan-600',
+      icon_hover: 'group-hover:bg-cyan-600 group-hover:text-white',
+      title_hover: 'group-hover:text-cyan-700',
+      btn_bg: 'text-cyan-500 group-hover:bg-cyan-600',
+      watermark: 'text-cyan-200'
+    }
+  ];
+
   const filteredTools = TOOLS.filter(tool => {
     const title = tool.title[lang].toLowerCase();
     const desc = tool.desc[lang].toLowerCase();
@@ -58,64 +118,114 @@ export default function Home() {
     return matchesSearch && matchesTab;
   });
 
-  const renderContent = () => {
+  const renderGridItems = () => {
     const items: React.ReactNode[] = [];
-    let adsRendered = 0;
+    const tools = [...filteredTools];
+    let toolIndex = 0;
     
-    filteredTools.forEach((tool, index) => {
+    while (toolIndex < tools.length) {
+      const currentSlot = items.length; 
+
+      // --- LOGIKA IKLAN TAB "SEMUA" ---
+      // Pola: 1,2,3 [ADS] 4,5,6,7 [ADS] ...
+      if (activeTab === 'All') {
+         if (currentSlot === 3 || currentSlot === 8 || currentSlot === 13 || currentSlot === 18) {
+            items.push(
+              <div key={`ad-slot-${currentSlot}`} className="h-[320px] bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
+                 <div className="absolute top-2 right-2 px-2 py-0.5 bg-white border border-slate-200 rounded text-[9px] font-bold text-slate-400 uppercase tracking-wider z-10">Ad</div>
+                 <div className="scale-90 origin-center z-10">
+                    <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
+                 </div>
+                 {/* Watermark Iklan */}
+                 <div className="absolute -bottom-6 -right-6 text-slate-200 z-0">
+                    <FileText size={120} strokeWidth={1} className="-rotate-12 opacity-80"/>
+                 </div>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 z-10">Sponsored</p>
+              </div>
+            );
+            continue;
+         }
+      }
+
+      // --- RENDER TOOL ASLI BERWARNA-WARNI ---
+      const tool = tools[toolIndex];
+      // Pilih tema warna berdasarkan urutan (modulo)
+      const theme = COLOR_THEMES[toolIndex % COLOR_THEMES.length];
+
       items.push(
-        <Link href={`/tools/${tool.id}`} key={tool.id} className="h-full">
-          <div className="group h-full bg-white p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-100 hover:-translate-y-1 transition-all duration-200 flex flex-col items-start gap-3 relative cursor-pointer overflow-hidden">
-            <div className={`relative z-10 bg-blue-50 border border-blue-100 text-blue-600 p-2.5 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-all`}>
-              <tool.icon className="w-5 h-5" strokeWidth={2} />
+        <Link href={`/tools/${tool.id}`} key={tool.id} className="block h-[320px]">
+          <div className={`group h-full p-6 rounded-2xl border ${theme.border} hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative cursor-pointer overflow-hidden ${theme.bg_grad}`}>
+            
+            {/* WATERMARK IKON RAKSASA (Sekarang lebih tebal & jelas) */}
+            <div className="absolute -bottom-10 -right-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12">
+               <tool.icon 
+                  strokeWidth={1} 
+                  className={`w-48 h-48 opacity-20 ${theme.watermark}`} 
+               />
             </div>
-            <div className="w-full relative z-10">
-              <h3 className="font-bold text-sm text-slate-800 group-hover:text-blue-700 mb-1.5 truncate">
+
+            {/* CONTENT (Layer Atas) */}
+            <div className="relative z-10">
+              <div className={`w-12 h-12 flex items-center justify-center border rounded-xl mb-4 transition-all duration-300 shadow-sm ${theme.icon_box} ${theme.icon_hover}`}>
+                <tool.icon className="w-6 h-6" strokeWidth={2} />
+              </div>
+              
+              <h3 className={`font-bold text-lg text-slate-800 mb-2 line-clamp-1 ${theme.title_hover}`}>
                 {tool.title[lang]}
               </h3>
-              <p className="text-[10px] text-slate-500 leading-snug line-clamp-2">
+              
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
                 {tool.desc[lang]}
               </p>
             </div>
-            <ArrowRight className="absolute bottom-3 right-3 w-3.5 h-3.5 text-blue-500 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+
+            {/* FOOTER CARD */}
+            <div className="relative z-10 flex items-center justify-between mt-4 border-t border-slate-200/50 pt-4">
+               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 bg-white/60 px-2 py-1 rounded-full backdrop-blur-sm border border-slate-100">
+                 <Zap size={10} className="text-amber-500 fill-amber-500"/> {lang === 'id' ? 'Gratis' : 'Free'}
+               </span>
+               <div className={`w-8 h-8 rounded-full bg-white border border-slate-100 flex items-center justify-center group-hover:text-white transition-all shadow-sm ${theme.btn_bg}`}>
+                  <ArrowRight size={16} />
+               </div>
+            </div>
+            
           </div>
         </Link>
       );
+      toolIndex++;
+    }
 
-      if (activeTab === 'All' && (index + 1) % 7 === 0 && adsRendered < 4) {
-        items.push(
-          <div key={`ad-insert-${adsRendered}`} className="group h-full bg-slate-50 p-4 rounded-xl border border-slate-200 border-dashed hover:border-blue-400 transition-all duration-200 flex flex-col items-start gap-3 relative cursor-pointer overflow-hidden">
-             <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[9px] font-bold text-slate-400 uppercase tracking-wider">Ad</div>
-             <div className="relative z-10 text-yellow-500 bg-white border border-slate-200 p-2.5 rounded-lg shadow-sm">
-                <Star className="w-5 h-5 fill-current" strokeWidth={2} />
-             </div>
-             <div className="w-full flex-1 flex items-center justify-center min-h-[50px] text-center">
-                <div>
-                   <p className="text-xs font-bold text-slate-700 uppercase italic">Sponsor</p>
-                   <p className="text-[10px] text-slate-500">Space Iklan</p>
-                </div>
-             </div>
-          </div>
-        );
-        adsRendered++;
-      }
-    });
+    // LOGIKA IKLAN FILTER (Wajib ada 1 di akhir)
+    if (activeTab !== 'All' && items.length > 0) {
+      items.push(
+        <div key="ad-slot-filter-end" className="h-[320px] bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
+           <div className="absolute top-2 right-2 px-2 py-0.5 bg-white border border-slate-200 rounded text-[9px] font-bold text-slate-400 uppercase tracking-wider z-10">Ad</div>
+           <div className="scale-90 origin-center z-10">
+              <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
+           </div>
+           <div className="absolute -bottom-6 -right-6 text-slate-200 z-0">
+               <FileText size={120} strokeWidth={1} className="-rotate-12 opacity-80"/>
+           </div>
+           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 z-10">Sponsored</p>
+        </div>
+      );
+    }
 
     return items;
   };
 
   return (
-    <div className="min-h-screen font-sans text-slate-800 bg-[#F8FAFC] selection:bg-blue-100 selection:text-blue-700">
+    <div className="min-h-screen font-sans text-slate-800 bg-[#F8FAFC] selection:bg-blue-100 selection:text-blue-700 flex flex-col">
       
-      {/* BACKGROUND GRID (Biru Samar) */}
+      {/* BACKGROUND GRID */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
          <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f61a_1px,transparent_1px),linear-gradient(to_bottom,#3b82f61a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
          <div className="absolute left-0 right-0 top-[-20%] -z-10 m-auto h-[500px] w-[500px] rounded-full bg-blue-500 opacity-[0.1] blur-[120px]"></div>
       </div>
 
       {/* HEADER */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 transition-all">
-        <div className="max-w-6xl mx-auto px-4 h-full flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 transition-all shrink-0">
+        <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform">
               <FileImage className="w-5 h-5" />
@@ -129,7 +239,6 @@ export default function Home() {
             <Link href="/tools/jpg-to-pdf" className="hover:text-blue-600 transition-colors font-bold tracking-tight">JPG ke PDF</Link>
             <Link href="#" className="hover:text-blue-600 transition-colors font-bold tracking-tight">Gabung PDF</Link>
             <div className="h-4 w-px bg-slate-200"></div>
-            {/* TOMBOL LOGIN DIHAPUS, DIGANTI BAHASA SAJA */}
             <button onClick={toggleLang} className="flex items-center gap-1 hover:text-blue-600 font-bold px-3 py-1.5 rounded-full border border-slate-200 hover:border-blue-200 transition-all text-xs bg-white">
                <Globe size={12} /> {lang.toUpperCase()}
             </button>
@@ -142,7 +251,7 @@ export default function Home() {
       </header>
 
       {/* HERO SECTION */}
-      <section className="relative z-10 pt-14 pb-12 px-6 border-b border-slate-200/60">
+      <section className="relative z-10 pt-14 pb-12 px-6 border-b border-slate-200/60 shrink-0">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.1]">
@@ -205,21 +314,49 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TOOLS GRID */}
-      <main className="max-w-6xl mx-auto px-4 py-12 pb-24 relative z-10">
-        {filteredTools.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {renderContent()}
-          </div>
-        ) : (
-          <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded-2xl max-w-lg mx-auto">
-            <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">{lang === 'id' ? 'Tidak Ditemukan' : 'Not Found'}</p>
-          </div>
-        )}
-      </main>
+      {/* --- GRID AREA --- */}
+      <div className="flex-1 flex justify-center gap-8 w-full max-w-[1500px] mx-auto pt-10">
+        
+        {/* SKYSCRAPER KIRI (Desktop XL+) */}
+        <div className="hidden xl:block sticky top-24 h-fit">
+           <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
+        </div>
 
-      {/* FOOTER */}
-      <footer className="bg-white border-t border-slate-200 pt-10 pb-6 text-xs relative z-10">
+        {/* CONTENT AREA */}
+        <div className="flex-1 max-w-7xl px-4 flex flex-col gap-10 pb-24">
+            
+            {/* LEADERBOARD ATAS */}
+            <div className="w-full flex justify-center">
+              <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
+            </div>
+
+            <main className="relative z-10 min-h-[500px]">
+              {filteredTools.length > 0 ? (
+                // GRID RESPONSIVE: 1 -> 2 -> 3 -> 4 Kolom
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {renderGridItems()}
+                </div>
+              ) : (
+                <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded-2xl max-w-lg mx-auto">
+                  <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">{lang === 'id' ? 'Tidak Ditemukan' : 'Not Found'}</p>
+                </div>
+              )}
+            </main>
+
+            {/* LEADERBOARD BAWAH */}
+            <div className="w-full flex justify-center mt-auto">
+              <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
+            </div>
+        </div>
+
+        {/* SKYSCRAPER KANAN (Desktop XL+) */}
+        <div className="hidden xl:block sticky top-24 h-fit">
+           <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
+        </div>
+
+      </div>
+
+      <footer className="bg-white border-t border-slate-200 pt-10 pb-6 text-xs relative z-10 mt-auto shrink-0">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-8">
             <div className="col-span-2 md:col-span-1 space-y-4">

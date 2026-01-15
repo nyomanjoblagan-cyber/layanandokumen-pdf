@@ -5,14 +5,16 @@ import { jsPDF } from 'jspdf';
 import { 
   UploadCloud, Trash2, FileImage, 
   MoveLeft, MoveRight, ImageIcon, Settings2, Download, Globe,
-  Maximize2, Layout, Plus, GripVertical, CheckCircle2
+  Maximize2, Layout, Plus, GripVertical, CheckCircle2, X, ArrowLeft, FileCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import AdsterraBanner from '@/components/AdsterraBanner';
 
 export default function JpgToPdfPage() {
   const [images, setImages] = useState<{id: string, file: File, preview: string}[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [lang, setLang] = useState<'id' | 'en'>('id');
   const [quality, setQuality] = useState(0.5); 
   const [pageSize, setPageSize] = useState<'a4' | 'letter' | 'fit'>('fit'); 
@@ -34,8 +36,6 @@ export default function JpgToPdfPage() {
     },
     select_btn: { id: 'Pilih Gambar JPG', en: 'Select JPG Images' },
     drop_text: { id: 'atau tarik gambar JPG ke sini', en: 'or drop JPG images here' },
-    
-    // UI Workspace
     setting: { id: 'Pengaturan Dokumen', en: 'Document Settings' },
     add: { id: 'Tambah', en: 'Add Files' },
     convert: { id: 'Konversi ke PDF', en: 'Convert to PDF' },
@@ -45,6 +45,13 @@ export default function JpgToPdfPage() {
     quality_label: { id: 'Kualitas', en: 'Quality' },
     ori_label: { id: 'Orientasi', en: 'Orientation' },
     size_label: { id: 'Kertas', en: 'Paper Size' },
+    
+    // Text Success Page
+    success_title: { id: 'Dokumen PDF Siap!', en: 'PDF Document Ready!' },
+    success_desc: { id: 'Gambar Anda berhasil dikonversi. Unduh file PDF Anda sekarang.', en: 'Your images have been converted. Download your PDF file now.' },
+    download_btn: { id: 'Download PDF', en: 'Download PDF' },
+    back_home: { id: 'Konversi Lagi', en: 'Convert Another' },
+
     portrait: { id: 'Potrait', en: 'Portrait' },
     landscape: { id: 'Landscape', en: 'Landscape' },
     auto: { id: 'Auto', en: 'Auto' },
@@ -91,6 +98,11 @@ export default function JpgToPdfPage() {
 
   const removeImage = (id: string) => setImages(prev => prev.filter(img => img.id !== id));
 
+  const resetAll = () => {
+    setImages([]);
+    setPdfUrl(null);
+  };
+
   const convertToPdf = async () => {
     if (images.length === 0) return;
     setIsProcessing(true);
@@ -129,7 +141,13 @@ export default function JpgToPdfPage() {
             doc?.addImage(dataUrl, 'JPEG', (pW-dW)/2, (pH-dH)/2, dW, dH, undefined, 'FAST');
         }
       }
-      doc?.save('LayananDokumen_PDF.pdf');
+      
+      const blob = doc?.output('blob');
+      if (blob) {
+         const url = URL.createObjectURL(blob);
+         setPdfUrl(url); 
+      }
+
     } catch (e) { alert("Gagal!"); } finally { setIsProcessing(false); }
   };
 
@@ -137,13 +155,10 @@ export default function JpgToPdfPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans relative selection:bg-blue-100 selection:text-blue-700 flex flex-col">
-      
-      {/* BACKGROUND (Grid Biru Samar) */}
       <div className="fixed inset-0 z-0 pointer-events-none">
          <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f61a_1px,transparent_1px),linear-gradient(to_bottom,#3b82f61a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
       </div>
 
-      {/* NAVBAR */}
       <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm shrink-0">
         <Link href="/" className="flex items-center gap-2 group">
           <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><FileImage size={18} /></div>
@@ -155,40 +170,35 @@ export default function JpgToPdfPage() {
            <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className="flex items-center gap-1.5 text-[10px] font-bold bg-white border border-slate-200 px-3 py-1.5 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-all">
              <Globe size={13} /> {lang.toUpperCase()}
            </button>
-           <Link href="/" className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-[0.2em] transition-colors">
-              {T.cancel[lang]}
+           <Link href="/" className="text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-[0.2em] transition-colors flex items-center gap-1">
+              <X size={14} /> {T.cancel[lang]}
            </Link>
         </div>
       </nav>
 
       <main className="flex-1 relative z-10 flex flex-col">
         
+        {/* === STATE 1: LANDING MODE === */}
         {images.length === 0 ? (
-          /* ================= LANDING MODE (Blue Theme) ================= */
           <div 
             className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-all ${isDraggingOver ? 'bg-blue-50/50' : ''}`}
             onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
             onDragLeave={() => setIsDraggingOver(false)}
             onDrop={handleDrop}
           >
-             <div className="w-full max-w-[1400px] flex gap-8 justify-center items-center">
-                {/* IKLAN KIRI */}
-                <div className="hidden 2xl:flex w-40 h-[600px] bg-white border border-dashed border-slate-200 rounded-xl items-center justify-center text-slate-300 text-[10px] font-bold uppercase tracking-widest vertical-text">
-                   Iklan Skyscraper
+             <div className="w-full max-w-[1400px] flex gap-4 xl:gap-8 justify-center items-start pt-10">
+                <div className="hidden xl:block sticky top-20">
+                   <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
                 </div>
-
                 <div className="flex-1 max-w-4xl space-y-8 animate-in fade-in zoom-in duration-500">
-                    {/* IKLAN BANNER */}
-                    <div className="w-full h-24 bg-white border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-slate-400 text-[10px] font-bold uppercase tracking-widest shadow-sm">
-                       Space Iklan Leaderboard (728x90)
+                    <div className="mb-8">
+                       <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
                     </div>
-
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-4">
                       <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">{T.hero_title[lang]}</h1>
                       <p className="text-lg text-slate-600 font-medium max-w-2xl mx-auto leading-relaxed">{T.hero_desc[lang]}</p>
                     </div>
-
-                    <div className="flex flex-col items-center gap-6">
+                    <div className="flex flex-col items-center gap-6 py-4">
                        <button 
                          onClick={() => fileInputRef.current?.click()}
                          className="bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold py-6 px-16 rounded-xl shadow-xl shadow-blue-200 hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3"
@@ -198,25 +208,75 @@ export default function JpgToPdfPage() {
                        </button>
                        <p className="text-slate-400 text-sm font-bold tracking-wide">{T.drop_text[lang]}</p>
                     </div>
-
-                    {/* IKLAN BOX */}
-                    <div className="w-full max-w-lg mx-auto h-64 bg-white border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-slate-400 text-[10px] font-bold uppercase tracking-widest shadow-sm mt-8">
-                       Space Iklan Rectangle (336x280)
+                    <div className="mt-10 flex justify-center">
+                       <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
                     </div>
-
                     <input type="file" multiple accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
                  </div>
-
-                 {/* IKLAN KANAN */}
-                 <div className="hidden 2xl:flex w-40 h-[600px] bg-white border border-dashed border-slate-200 rounded-xl items-center justify-center text-slate-300 text-[10px] font-bold uppercase tracking-widest vertical-text">
-                   Iklan Skyscraper
+                 <div className="hidden xl:block sticky top-20">
+                   <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
                 </div>
              </div>
           </div>
+
+        /* === STATE 2: SUCCESS / DOWNLOAD PAGE === */
+        ) : pdfUrl ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+             <div className="w-full max-w-[1400px] flex gap-4 xl:gap-8 justify-center items-start pt-10">
+                <div className="hidden xl:block sticky top-20">
+                   <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
+                </div>
+
+                <div className="flex-1 max-w-4xl space-y-8 animate-in slide-in-from-bottom duration-500">
+                    <div className="mb-8">
+                       <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
+                    </div>
+
+                    <div className="bg-white border border-slate-200 rounded-3xl p-10 shadow-2xl shadow-blue-100 max-w-xl mx-auto">
+                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+                           <FileCheck size={40} strokeWidth={3} />
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-900 mb-3">{T.success_title[lang]}</h2>
+                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">
+                          {T.success_desc[lang]}
+                        </p>
+
+                        <div className="flex flex-col gap-4">
+                           {/* TOMBOL DOWNLOAD NORMAL (TANPA SCRIPT IKLAN POPUNDER) */}
+                           <a 
+                              href={pdfUrl}
+                              download="LayananDokumen_PDF.pdf"
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                           >
+                              <Download size={24} /> {T.download_btn[lang]}
+                           </a>
+
+                           <button 
+                              onClick={resetAll}
+                              className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
+                           >
+                              <ArrowLeft size={16} /> {T.back_home[lang]}
+                           </button>
+                        </div>
+                    </div>
+
+                    <div className="mt-10 flex justify-center">
+                       <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
+                    </div>
+                </div>
+
+                <div className="hidden xl:block sticky top-20">
+                   <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
+                </div>
+             </div>
+          </div>
+
+        /* === STATE 3: WORKSPACE MODE === */
         ) : (
-          /* ================= WORKSPACE MODE (Blue Theme) ================= */
           <div className="w-full max-w-7xl mx-auto py-6 px-4 md:px-6">
-            <div className="w-full h-20 bg-white border border-dashed border-slate-200 rounded-xl mb-6 flex items-center justify-center text-slate-400 text-[10px] font-bold uppercase tracking-widest shadow-sm">Iklan Banner Atas</div>
+            <div className="mb-6 flex justify-center">
+              <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
+            </div>
 
             <div className="flex flex-col lg:flex-row gap-6">
               <div className="w-full lg:w-80 space-y-4 shrink-0">
@@ -252,15 +312,15 @@ export default function JpgToPdfPage() {
                         {isProcessing ? 'PROSES...' : <><Download size={16}/> {T.convert[lang]}</>}
                     </button>
                   </div>
-                  <div className="w-full h-64 bg-white border border-dashed border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 text-[10px] font-bold uppercase tracking-widest text-center px-6 shadow-sm">Iklan Sidebar</div>
+                  <div className="flex justify-center bg-white border border-dashed border-slate-200 rounded-2xl p-4 shadow-sm">
+                     <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
+                  </div>
               </div>
-
               <div className="flex-1 bg-white rounded-2xl shadow-xl shadow-blue-100/50 border border-slate-200 p-8 min-h-[600px] relative animate-in slide-in-from-bottom duration-500">
                   <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-5">
                     <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2 tracking-wide"><ImageIcon size={18} className="text-blue-500" /> {T.preview[lang]} <span className="text-blue-600 text-[10px] font-black ml-1 bg-blue-50 px-2 py-0.5 rounded-full">({images.length})</span></h3>
                     {images.length > 0 && <button onClick={() => setImages([])} className="text-[10px] font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors uppercase tracking-widest">{T.clear[lang]}</button>}
                   </div>
-
                   <DragDropContext onDragEnd={onDragEnd}>
                     <Droppable droppableId="images-grid" direction="horizontal">
                       {(provided) => (
@@ -298,7 +358,9 @@ export default function JpgToPdfPage() {
                   </DragDropContext>
               </div>
             </div>
-            <div className="w-full h-24 bg-white border border-dashed border-slate-200 rounded-xl mt-8 flex items-center justify-center text-slate-400 text-[10px] font-bold uppercase tracking-widest shadow-sm">Iklan Banner Bawah</div>
+            <div className="mt-8 flex justify-center">
+              <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
+            </div>
           </div>
         )}
       </main>
