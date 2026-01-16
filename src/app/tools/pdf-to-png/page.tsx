@@ -5,20 +5,20 @@ import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
 import { 
   FileImage, Settings2, Download, Globe,
-  CheckCircle2, X, ArrowLeft, FileCheck, Loader2, Image as ImageIcon, Trash2
+  CheckCircle2, X, ArrowLeft, Loader2, Image as ImageIcon, Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
-// 1. WORKER STABIL (WAJIB)
+// 1. WORKER STABIL (Wajib)
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
 
-export default function PdfToJpgPage() {
+export default function PdfToPngPage() {
   // STATE UTAMA
   const [file, setFile] = useState<File | null>(null);
-  const [pages, setPages] = useState<string[]>([]); // Array Base64 Images
+  const [pages, setPages] = useState<string[]>([]); // Array Base64 PNG Images
   const [isProcessing, setIsProcessing] = useState(false);
   const [zipUrl, setZipUrl] = useState<string | null>(null);
   
@@ -43,17 +43,17 @@ export default function PdfToJpgPage() {
 
   // --- 3. KAMUS ---
   const T = {
-    hero_title: { id: 'Konversi PDF ke JPG', en: 'Convert PDF to JPG' },
+    hero_title: { id: 'Konversi PDF ke PNG', en: 'Convert PDF to PNG' },
     hero_desc: { 
-      id: 'Ubah setiap halaman PDF menjadi gambar JPG berkualitas tinggi. Unduh per halaman atau sekaligus (ZIP).', 
-      en: 'Turn every PDF page into a high-quality JPG image. Download individually or all at once (ZIP).' 
+      id: 'Ubah halaman PDF menjadi gambar PNG berkualitas tinggi (Lossless). Cocok untuk grafis dan teks tajam.', 
+      en: 'Turn PDF pages into high-quality PNG images (Lossless). Perfect for graphics and sharp text.' 
     },
     select_btn: { id: 'Pilih File PDF', en: 'Select PDF File' },
     drop_text: { id: 'atau tarik file PDF ke sini', en: 'or drop PDF file here' },
     
     // Status
-    converting: { id: 'Mengekstrak Gambar...', en: 'Extracting Images...' },
-    preview: { id: 'Galeri Halaman', en: 'Page Gallery' },
+    converting: { id: 'Mengekstrak PNG...', en: 'Extracting PNG...' },
+    preview: { id: 'Galeri PNG', en: 'PNG Gallery' },
     
     // Actions
     download_zip: { id: 'Download Semua (ZIP)', en: 'Download All (ZIP)' },
@@ -76,7 +76,7 @@ export default function PdfToJpgPage() {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
   };
 
-  // --- 4. ENGINE KONVERSI (PDF -> CANVAS -> JPG) ---
+  // --- 4. ENGINE KONVERSI (PDF -> CANVAS -> PNG) ---
   const processFile = async (uploadedFile: File) => {
     if (uploadedFile.type !== 'application/pdf') {
         alert("Mohon pilih file PDF.");
@@ -99,7 +99,7 @@ export default function PdfToJpgPage() {
         for (let i = 1; i <= totalPages; i++) {
             const page = await pdf.getPage(i);
             
-            // Scale 1.5 = Kualitas Tajam (Sekitar 150 DPI)
+            // Scale 1.5 = Kualitas Tajam
             const viewport = page.getViewport({ scale: 1.5 });
             
             const canvas = document.createElement('canvas');
@@ -114,8 +114,8 @@ export default function PdfToJpgPage() {
                     viewport: viewport
                 }).promise;
 
-                // Convert ke JPG (Quality 0.8 / 80%)
-                extractedImages.push(canvas.toDataURL('image/jpeg', 0.8));
+                // Perbedaan utama dengan JPG: Menggunakan 'image/png'
+                extractedImages.push(canvas.toDataURL('image/png'));
             }
         }
 
@@ -128,7 +128,7 @@ export default function PdfToJpgPage() {
 
     } catch (e) {
         console.error(e);
-        alert("Gagal memproses PDF. File mungkin rusak atau terpassword.");
+        alert("Gagal memproses PDF.");
         setFile(null);
     } finally {
         setIsProcessing(false);
@@ -138,13 +138,10 @@ export default function PdfToJpgPage() {
   // --- 5. ZIP GENERATOR ---
   const generateZip = async (images: string[], filename: string) => {
     const zip = new JSZip();
-    const folderName = filename.replace('.pdf', '') + '_images';
-    // const folder = zip.folder(folderName); // Opsi folder dalam zip
-
+    
     images.forEach((imgData, idx) => {
         const data = imgData.split(',')[1];
-        // Simpan langsung di root zip agar lebih mudah diakses user
-        zip.file(`page_${idx + 1}.jpg`, data, { base64: true });
+        zip.file(`page_${idx + 1}.png`, data, { base64: true });
     });
 
     const content = await zip.generateAsync({ type: 'blob' });
@@ -166,10 +163,10 @@ export default function PdfToJpgPage() {
       {/* NAVBAR */}
       <nav className="bg-white border-b border-slate-200 h-16 px-4 md:px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm shrink-0">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><FileImage size={18} /></div>
+          <div className="bg-teal-600 text-white p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><FileImage size={18} /></div>
           <span className="font-bold text-lg md:text-xl tracking-tight text-slate-900 italic uppercase">
-              <span className="md:hidden">PDF to <span className="text-blue-600">JPG</span></span>
-              <span className="hidden md:inline">PDF<span className="text-blue-600">2JPG</span> Pro</span>
+              <span className="md:hidden">PDF to <span className="text-teal-600">PNG</span></span>
+              <span className="hidden md:inline">PDF<span className="text-teal-600">2PNG</span> Pro</span>
           </span>
         </Link>
         <div className="flex items-center gap-4">
@@ -185,7 +182,7 @@ export default function PdfToJpgPage() {
         {/* VIEW 1: UPLOAD */}
         {!file && (
           <div 
-            className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-all ${isDraggingOver ? 'bg-blue-50/50' : ''}`}
+            className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-all ${isDraggingOver ? 'bg-teal-50/50' : ''}`}
             onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
             onDragLeave={() => setIsDraggingOver(false)}
             onDrop={handleDrop}
@@ -202,7 +199,7 @@ export default function PdfToJpgPage() {
                     </div>
 
                     <div className="flex flex-col items-center gap-6">
-                        <button onClick={() => fileInputRef.current?.click()} className="group relative bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-5 px-16 rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-3 mx-auto uppercase tracking-widest">
+                        <button onClick={() => fileInputRef.current?.click()} className="group relative bg-teal-600 hover:bg-teal-700 text-white text-lg font-bold py-5 px-16 rounded-2xl shadow-xl shadow-teal-200 transition-all active:scale-95 flex items-center justify-center gap-3 mx-auto uppercase tracking-widest">
                            <FileImage size={24} /> {T.select_btn[lang]}
                         </button>
                         <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">{T.drop_text[lang]}</p>
@@ -235,19 +232,19 @@ export default function PdfToJpgPage() {
                         
                         <div className="mb-6">
                             <p className="font-bold text-slate-700 truncate mb-1 text-sm">{file.name}</p>
-                            <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold uppercase tracking-wide">
+                            <span className="text-[10px] bg-teal-50 text-teal-600 px-2 py-1 rounded font-bold uppercase tracking-wide">
                                 {isProcessing ? T.converting[lang] : `${pages.length} ${T.pages_count[lang]}`}
                             </span>
                         </div>
 
                         {isProcessing ? (
-                            <div className="flex flex-col items-center justify-center py-4 text-blue-500">
+                            <div className="flex flex-col items-center justify-center py-4 text-teal-500">
                                 <Loader2 className="animate-spin mb-2" size={24} />
                                 <span className="text-[10px] font-bold animate-pulse text-center uppercase tracking-widest">{T.converting[lang]}</span>
                             </div>
                         ) : (
                             zipUrl && (
-                                <a href={zipUrl} download={`${file.name.replace('.pdf', '')}_images.zip`} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-200 text-xs active:scale-95 transition-all flex items-center justify-center gap-2 mb-4 cursor-pointer uppercase tracking-widest">
+                                <a href={zipUrl} download={`${file.name.replace('.pdf', '')}_png_images.zip`} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-200 text-xs active:scale-95 transition-all flex items-center justify-center gap-2 mb-4 cursor-pointer uppercase tracking-widest">
                                     <Download size={16}/> {T.download_zip[lang]}
                                 </a>
                             )
@@ -268,7 +265,7 @@ export default function PdfToJpgPage() {
                 {/* MAIN GALLERY */}
                 <div className="flex-1 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 md:p-8 overflow-y-auto min-h-[400px] order-2 lg:order-2">
                     <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
-                        <h3 className="font-black text-sm text-slate-800 flex items-center gap-2 uppercase tracking-wide"><ImageIcon size={16} className="text-blue-500" /> {T.preview[lang]}</h3>
+                        <h3 className="font-black text-sm text-slate-800 flex items-center gap-2 uppercase tracking-wide"><ImageIcon size={16} className="text-teal-500" /> {T.preview[lang]}</h3>
                     </div>
 
                     {isProcessing ? (
@@ -286,8 +283,8 @@ export default function PdfToJpgPage() {
                                     {/* Overlay Download */}
                                     <div className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 backdrop-blur-sm p-4">
                                         <span className="text-white font-black text-lg">#{idx + 1}</span>
-                                        <a href={img} download={`page_${idx+1}.jpg`} className="bg-white text-slate-900 px-4 py-2 rounded-lg font-bold text-[10px] flex items-center gap-2 hover:bg-blue-50 transition-colors uppercase tracking-widest w-full justify-center">
-                                            <Download size={14}/> JPG
+                                        <a href={img} download={`page_${idx+1}.png`} className="bg-white text-slate-900 px-4 py-2 rounded-lg font-bold text-[10px] flex items-center gap-2 hover:bg-teal-50 transition-colors uppercase tracking-widest w-full justify-center">
+                                            <Download size={14}/> PNG
                                         </a>
                                     </div>
                                     {/* Mobile Badge */}

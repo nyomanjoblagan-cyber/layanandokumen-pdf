@@ -4,7 +4,8 @@ import {
   Minimize, Layers, Trash2,
   FileSignature, BookOpen, 
   FileImage, BadgeCheck, 
-  Maximize, FileUp
+  Maximize, FileUp, Camera, FilePenLine, Stamp, Hash, 
+  FileDown, FileType, Layout, FileCode
 } from 'lucide-react';
 
 // Tipe Data
@@ -21,9 +22,9 @@ export const UI_TEXT = {
   footer: { id: 'Dibuat untuk Produktivitas Indonesia', en: 'Built for Productivity' }
 };
 
-// DATA TOOLS (HANYA YANG PASTI WORK DI CLIENT-SIDE)
+// DATA TOOLS (ID disesuaikan 100% dengan struktur folder Mas)
 export const TOOLS = [
-  // --- 1. POPULER (SAFE) ---
+  // --- 1. POPULER (FOLDER MAS) ---
   { 
     id: 'jpg-to-pdf', 
     title: { id: 'JPG ke PDF', en: 'JPG to PDF' }, 
@@ -56,8 +57,24 @@ export const TOOLS = [
     category: { id: 'Populer', en: 'Popular' }, 
     color: 'text-red-500', bg: 'bg-red-50' 
   },
+  { 
+    id: 'edit-pdf', 
+    title: { id: 'Edit PDF (Teks)', en: 'Edit PDF (Text)' }, 
+    desc: { id: 'Tambahkan teks manual atau isi formulir PDF.', en: 'Add manual text or fill PDF forms.' }, 
+    icon: FilePenLine, 
+    category: { id: 'Populer', en: 'Popular' }, 
+    color: 'text-indigo-600', bg: 'bg-indigo-50' 
+  },
+  { 
+    id: 'scan-pdf', 
+    title: { id: 'Scan PDF (Kamera)', en: 'Scan PDF (Camera)' }, 
+    desc: { id: 'Gunakan kamera HP untuk scan dokumen ke PDF.', en: 'Use phone camera to scan docs to PDF.' }, 
+    icon: Camera, 
+    category: { id: 'Populer', en: 'Popular' }, 
+    color: 'text-blue-600', bg: 'bg-blue-50' 
+  },
 
-  // --- 2. KONVERSI GAMBAR (SAFE - PAKAI CANVAS) ---
+  // --- 2. KONVERSI (FOLDER MAS + BARU) ---
   { 
     id: 'pdf-to-jpg', 
     title: { id: 'PDF ke JPG', en: 'PDF to JPG' }, 
@@ -90,8 +107,16 @@ export const TOOLS = [
     category: { id: 'Konversi', en: 'Convert' }, 
     color: 'text-blue-500', bg: 'bg-blue-50' 
   },
+{ 
+    id: 'flatten-pdf',  // <-- GANTI ID
+    title: { id: 'Ratakan PDF', en: 'Flatten PDF' }, // <-- GANTI JUDUL
+    desc: { id: 'Kunci formulir & anotasi agar permanen.', en: 'Make forms & annotations permanent.' }, 
+    icon: Layers, // <-- Import 'Layers' dari lucide-react jika belum
+    category: { id: 'Konversi', en: 'Convert' }, 
+    color: 'text-slate-700', bg: 'bg-slate-100' 
+  },
 
-  // --- 3. EDIT & ORGANISIR (SAFE - PAKAI PDF-LIB) ---
+  // --- 3. EDIT & ORGANISIR (FOLDER MAS + BARU) ---
   { 
     id: 'rotate-pdf', 
     title: { id: 'Putar PDF', en: 'Rotate PDF' }, 
@@ -149,7 +174,7 @@ export const TOOLS = [
     color: 'text-green-600', bg: 'bg-green-50' 
   },
 
-  // --- 4. KEAMANAN (SAFE - CRYPTO JS) ---
+  // --- 4. KEAMANAN (FOLDER MAS) ---
   { 
     id: 'protect-pdf', 
     title: { id: 'Kunci PDF', en: 'Protect PDF' }, 
@@ -189,5 +214,13 @@ export const TOOLS = [
     icon: PenTool, 
     category: { id: 'Edit & Atur', en: 'Organize' }, 
     color: 'text-indigo-600', bg: 'bg-indigo-50' 
+  },
+  { 
+    id: 'pdf-to-html', 
+    title: { id: 'PDF ke HTML', en: 'PDF to HTML' }, 
+    desc: { id: 'Ubah PDF menjadi file web HTML.', en: 'Convert PDF to HTML web file.' }, 
+    icon: FileCode, 
+    category: { id: 'Konversi', en: 'Convert' }, 
+    color: 'text-purple-500', bg: 'bg-purple-50' 
   }
 ];

@@ -2,64 +2,83 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
-// PERBAIKAN IMPORT: Ambil langsung dari folder build agar tidak error DOMMatrix
-import * as pdfjsLib from 'pdfjs-dist/build/pdf';
+import * as pdfjsLib from 'pdfjs-dist';
 import { 
-  UploadCloud, Trash2, FileText, FileImage, 
-  Layers, Settings2, Download, Globe,
-  Plus, GripVertical, CheckCircle2, X, ArrowLeft, FileCheck, Loader2, ShieldCheck
+  FileImage, Layers, Settings2, Download, Globe,
+  Plus, GripVertical, CheckCircle2, X, ArrowLeft, FileCheck, Loader2, FileText
 } from 'lucide-react';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
-// SET WORKER (Versi 3.11.174)
-// Kita gunakan trik typeof window agar tidak error saat build server
-if (typeof window !== 'undefined' && 'Worker' in window) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+// 1. SETUP WORKER STABIL (Wajib)
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
 
 export default function MergePdfPage() {
+  // STATE UTAMA
   const [files, setFiles] = useState<{id: string, file: File, name: string, size: string, thumbnail: string | null}[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGeneratingThumb, setIsGeneratingThumb] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  
+  // SETTINGS
+  const [quality, setQuality] = useState(0.8); // Placeholder untuk future feature
+  
+  // UI & BAHASA
   const [lang, setLang] = useState<'id' | 'en'>('id');
-  const [quality, setQuality] = useState(0.8);
-  const [enabled, setEnabled] = useState(false); 
+  const [mobileTab, setMobileTab] = useState<0 | 1>(0); 
+  const [isLoaded, setIsLoaded] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // --- 2. LOGIKA BAHASA ---
   useEffect(() => {
-    const animation = requestAnimationFrame(() => setEnabled(true));
-    return () => { cancelAnimationFrame(animation); setEnabled(false); };
+    const saved = localStorage.getItem('user-lang') as 'id' | 'en';
+    if (saved) setLang(saved);
+    setIsLoaded(true);
   }, []);
 
+  const toggleLang = () => {
+    const newLang = lang === 'id' ? 'en' : 'id';
+    setLang(newLang);
+    localStorage.setItem('user-lang', newLang);
+  };
+
+  // --- 3. KAMUS ---
   const T = {
     hero_title: { id: 'Gabung File PDF', en: 'Merge PDF Files' },
-    hero_desc: { 
-      id: 'Gabungkan beberapa file PDF menjadi satu dokumen. Tarik file untuk mengatur urutan.', 
-      en: 'Combine multiple PDF files into one document. Drag files to reorder.' 
-    },
+    hero_desc: { id: 'Gabungkan banyak file PDF menjadi satu dokumen urut dan rapi.', en: 'Combine multiple PDF files into one ordered and neat document.' },
     select_btn: { id: 'Pilih File PDF', en: 'Select PDF Files' },
-    drop_text: { id: 'atau tarik file PDF ke sini', en: 'or drop PDF files here' },
-    setting: { id: 'Pengaturan', en: 'Settings' },
-    add: { id: 'Tambah', en: 'Add Files' },
-    convert: { id: 'Gabungkan PDF', en: 'Merge PDF' },
-    clear: { id: 'Reset', en: 'Reset' },
-    preview: { id: 'Daftar File', en: 'File List' },
-    cancel: { id: 'BATAL', en: 'CANCEL' },
-    quality_label: { id: 'Kualitas Output', en: 'Output Quality' },
+    drop_text: { id: 'atau tarik file ke sini', en: 'or drop files here' },
     
-    // Opsi Kualitas
-    high: { id: 'Tinggi (Asli)', en: 'High (Original)' },
-    med: { id: 'Sedang (Kompresi)', en: 'Medium (Compressed)' },
-    low: { id: 'Rendah (Web)', en: 'Low (Web)' },
-
-    success_title: { id: 'PDF Berhasil Digabung!', en: 'PDF Merged Successfully!' },
-    success_desc: { id: 'Dokumen PDF Anda telah disatukan. Siap untuk diunduh.', en: 'Your PDF documents have been combined. Ready for download.' },
-    download_btn: { id: 'Download PDF Gabungan', en: 'Download Merged PDF' },
+    // Tabs
+    tab_files: { id: 'Urutan File', en: 'File Order' },
+    tab_settings: { id: 'Opsi', en: 'Options' },
+    
+    // Settings
+    setting_title: { id: 'Pengaturan', en: 'Settings' },
+    quality_label: { id: 'Mode Penggabungan', en: 'Merge Mode' },
+    mode_fast: { id: 'Cepat (Tanpa Kompresi)', en: 'Fast (No Compression)' },
+    mode_safe: { id: 'Aman (Flatten Form)', en: 'Safe (Flatten Form)' },
+    
+    // List
+    list_title: { id: 'Daftar File', en: 'File List' },
+    add_more: { id: 'Tambah', en: 'Add' },
+    clear_all: { id: 'Reset', en: 'Reset' },
+    
+    // Actions
+    btn_merge: { id: 'Gabungkan PDF', en: 'Merge PDF' },
+    
+    // Status
+    gen_thumb: { id: 'Memuat Thumbnail...', en: 'Loading Thumbnails...' },
+    processing: { id: 'Menggabungkan...', en: 'Merging...' },
+    success_title: { id: 'Berhasil Digabung!', en: 'Merge Success!' },
+    success_desc: { id: 'File PDF Anda telah disatukan dan siap diunduh.', en: 'Your PDF files have been combined and are ready for download.' },
+    download_btn: { id: 'Download PDF', en: 'Download PDF' },
     back_home: { id: 'Gabung Lagi', en: 'Merge Another' },
+    cancel: { id: 'Tutup', en: 'Close' },
   };
 
   const formatSize = (bytes: number) => {
@@ -70,36 +89,15 @@ export default function MergePdfPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const onDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    const items = Array.from(files);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    setFiles(items);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) processFiles(Array.from(e.target.files));
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDraggingOver(false);
-    if (e.dataTransfer.files) processFiles(Array.from(e.dataTransfer.files));
-  };
-
-  // --- GENERATE THUMBNAIL ---
+  // --- 4. THUMBNAIL GENERATOR ---
   const generateThumbnail = async (file: File): Promise<string | null> => {
     try {
       const arrayBuffer = await file.arrayBuffer();
-      // Clone buffer agar tidak conflict dengan library lain
-      const bufferClone = arrayBuffer.slice(0);
-      
-      const loadingTask = pdfjsLib.getDocument({ data: bufferClone });
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }); // Slice untuk safety
       const pdf = await loadingTask.promise;
-      const page = await pdf.getPage(1); 
+      const page = await pdf.getPage(1); // Ambil halaman 1 saja
 
-      const viewport = page.getViewport({ scale: 0.3 });
+      const viewport = page.getViewport({ scale: 0.3 }); // Skala kecil untuk thumbnail
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       
@@ -108,296 +106,259 @@ export default function MergePdfPage() {
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
-      await page.render({ 
-        canvasContext: context, 
-        viewport: viewport 
-      } as any).promise;
-      
-      return canvas.toDataURL(); 
+      await page.render({ canvasContext: context, viewport }).promise;
+      return canvas.toDataURL();
     } catch (error) {
-      console.error("Gagal render thumbnail:", error);
-      return null; 
+      console.error("Thumb error:", error);
+      return null;
     }
   };
 
+  // --- 5. HANDLE FILES ---
   const processFiles = async (newFiles: File[]) => {
     const validFiles = newFiles.filter(f => f.type === 'application/pdf');
-    if (validFiles.length === 0 && newFiles.length > 0) {
-        alert("Mohon pilih file PDF saja.");
-        return;
-    }
+    if (validFiles.length === 0) { alert("Hanya file PDF yang diperbolehkan."); return; }
 
-    setIsGeneratingThumb(true); 
+    setIsGeneratingThumb(true);
     
-    const processedFiles: {id: string, file: File, name: string, size: string, thumbnail: string | null}[] = [];
-    
+    const processed: any[] = [];
     for (const file of validFiles) {
-       const thumb = await generateThumbnail(file);
-       processedFiles.push({
-          id: `pdf-${Math.random().toString(36).substr(2, 9)}`,
-          file,
-          name: file.name,
-          size: formatSize(file.size),
-          thumbnail: thumb
-       });
+        const thumb = await generateThumbnail(file);
+        processed.push({
+            id: `pdf-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            file,
+            name: file.name,
+            size: formatSize(file.size),
+            thumbnail: thumb
+        });
     }
 
-    setFiles(prev => [...prev, ...processedFiles]);
-    setIsGeneratingThumb(false); 
+    setFiles(prev => [...prev, ...processed]);
+    setIsGeneratingThumb(false);
   };
 
-  const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
-
-  const resetAll = () => {
-    setFiles([]);
-    setPdfUrl(null);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    if (e.dataTransfer.files) processFiles(Array.from(e.dataTransfer.files));
   };
 
-  const mergePdfs = async () => {
-    if (files.length < 2) {
-        alert("Minimal 2 file PDF untuk digabungkan.");
-        return;
-    }
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const items = Array.from(files);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    setFiles(items);
+  };
+
+  const removeFile = (id: string) => {
+    setFiles(prev => prev.filter(f => f.id !== id));
+  };
+
+  // --- 6. MERGE ENGINE ---
+  const handleMerge = async () => {
+    if (files.length < 2) { alert("Minimal 2 file untuk digabungkan."); return; }
     setIsProcessing(true);
+    
     try {
-      const mergedPdf = await PDFDocument.create();
+        const mergedPdf = await PDFDocument.create();
 
-      for (const fileObj of files) {
-        const fileBuffer = await fileObj.file.arrayBuffer();
-        const pdf = await PDFDocument.load(fileBuffer);
-        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
-      }
+        for (const fileObj of files) {
+            const fileBuffer = await fileObj.file.arrayBuffer();
+            const pdf = await PDFDocument.load(fileBuffer);
+            const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+            copiedPages.forEach((page) => mergedPdf.addPage(page));
+        }
 
-      const pdfBytes = await mergedPdf.save();
-      const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-
+        const pdfBytes = await mergedPdf.save();
+        // Fix Blob Type Error
+        const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+        setPdfUrl(URL.createObjectURL(blob));
     } catch (e) { 
         console.error(e);
-        alert("Gagal menggabungkan PDF. Pastikan file tidak terkunci password."); 
+        alert("Gagal menggabungkan PDF. Pastikan file tidak dipassword."); 
     } finally { 
         setIsProcessing(false); 
     }
   };
 
-  if (!enabled) return null;
+  if (!isLoaded) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans relative selection:bg-blue-100 selection:text-blue-700 flex flex-col">
-      <div className="fixed inset-0 z-0 pointer-events-none">
-         <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f61a_1px,transparent_1px),linear-gradient(to_bottom,#3b82f61a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-      </div>
-
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm shrink-0">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans flex flex-col overflow-hidden">
+      {/* NAVBAR */}
+      <nav className="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-50 shrink-0 shadow-sm">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><FileImage size={18} /></div>
-          <span className="font-bold text-xl tracking-tight text-slate-900 italic uppercase">
-             Layanan<span className="text-blue-600">Dokumen</span> <span className="text-slate-300 font-black">PDF</span>
-          </span>
+          <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><Layers size={20} /></div>
+          <span className="font-bold text-xl tracking-tight text-slate-900 italic uppercase">Merge<span className="text-blue-600">PDF</span></span>
         </Link>
         <div className="flex items-center gap-4">
-           <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className="flex items-center gap-1.5 text-[10px] font-bold bg-white border border-slate-200 px-3 py-1.5 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-all">
-             <Globe size={13} /> {lang.toUpperCase()}
-           </button>
-           <Link href="/" className="text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-[0.2em] transition-colors flex items-center gap-1">
-              <X size={14} /> {T.cancel[lang]}
+           <button onClick={toggleLang} className="text-[10px] font-bold px-3 py-1.5 bg-slate-100 rounded-lg hover:bg-slate-200 transition-all uppercase tracking-widest text-slate-600">{lang}</button>
+           <Link href="/" className="flex items-center gap-2 text-xs font-bold text-red-400 hover:text-red-500 transition-colors bg-red-50 px-4 py-2 rounded-lg border border-slate-100">
+              <X size={16} /> {T.cancel[lang]}
            </Link>
         </div>
       </nav>
 
-      <main className="flex-1 relative z-10 flex flex-col">
+      <main className="flex-1 relative z-10 flex flex-col h-[calc(100dvh-56px)] md:h-auto overflow-y-auto">
+        
+        {/* VIEW 1: UPLOAD */}
         {files.length === 0 ? (
-          /* --- LANDING --- */
           <div 
-            className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-all ${isDraggingOver ? 'bg-blue-50/50' : ''}`}
+            className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-colors ${isDraggingOver ? 'bg-blue-50' : 'bg-[#F8FAFC]'}`}
             onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
             onDragLeave={() => setIsDraggingOver(false)}
             onDrop={handleDrop}
           >
-             <div className="w-full max-w-[1400px] flex gap-4 xl:gap-8 justify-center items-start pt-10">
-                <div className="hidden xl:block sticky top-20">
-                   <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
-                </div>
-                <div className="flex-1 max-w-4xl space-y-8 animate-in fade-in zoom-in duration-500">
-                    <div className="mb-8">
-                       <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
-                    </div>
-                    <div className="space-y-4">
+             <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
+                <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
+                
+                <div className="flex-1 max-w-2xl space-y-10 animate-in fade-in zoom-in duration-500 py-10">
+                    <div className="flex justify-center"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
+                    
+                    <div className="space-y-4 px-4">
                       <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">{T.hero_title[lang]}</h1>
-                      <p className="text-lg text-slate-600 font-medium max-w-2xl mx-auto leading-relaxed">{T.hero_desc[lang]}</p>
+                      <p className="text-slate-500 font-medium text-lg leading-relaxed">{T.hero_desc[lang]}</p>
                     </div>
-                    <div className="flex flex-col items-center gap-6 py-4">
-                       <button 
-                         onClick={() => fileInputRef.current?.click()}
-                         className="bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold py-6 px-16 rounded-xl shadow-xl shadow-blue-200 hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3"
-                       >
-                          {isGeneratingThumb ? <Loader2 className="animate-spin" size={32}/> : <Layers size={32} />}
-                          {T.select_btn[lang]}
-                       </button>
-                       <p className="text-slate-400 text-sm font-bold tracking-wide">{T.drop_text[lang]}</p>
+
+                    <div className="flex flex-col items-center gap-6">
+                        <button onClick={() => fileInputRef.current?.click()} disabled={isGeneratingThumb} className="group relative bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-5 px-16 rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-3 mx-auto uppercase tracking-widest disabled:bg-slate-400">
+                           {isGeneratingThumb ? <Loader2 className="animate-spin" size={24}/> : <Layers size={24} />} 
+                           {isGeneratingThumb ? T.gen_thumb[lang] : T.select_btn[lang]}
+                        </button>
+                        <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">{T.drop_text[lang]}</p>
                     </div>
-                    <div className="mt-10 flex justify-center">
-                       <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
-                    </div>
-                    <input type="file" multiple accept="application/pdf" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                    
+                    <div className="flex justify-center mt-8"><AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" /></div>
+                    <input type="file" multiple accept="application/pdf" ref={fileInputRef} onChange={(e) => e.target.files && processFiles(Array.from(e.target.files))} className="hidden" />
                  </div>
-                 <div className="hidden xl:block sticky top-20">
-                   <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
-                </div>
+
+                <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
              </div>
           </div>
         ) : pdfUrl ? (
-          /* --- SUCCESS --- */
-          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-             <div className="w-full max-w-[1400px] flex gap-4 xl:gap-8 justify-center items-start pt-10">
-                <div className="hidden xl:block sticky top-20">
-                   <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
-                </div>
-
-                <div className="flex-1 max-w-4xl space-y-8 animate-in slide-in-from-bottom duration-500">
-                    <div className="mb-8">
-                       <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
-                    </div>
-
-                    <div className="bg-white border border-slate-200 rounded-3xl p-10 shadow-2xl shadow-blue-100 max-w-xl mx-auto">
-                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-                           <FileCheck size={40} strokeWidth={3} />
-                        </div>
+          // VIEW 2: DOWNLOAD
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-white overflow-y-auto">
+             <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
+                <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
+                
+                <div className="flex-1 max-w-lg space-y-8 animate-in slide-in-from-bottom duration-500">
+                    <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
+                    
+                    <div className="bg-white border border-slate-200 rounded-[30px] p-10 text-center shadow-2xl relative overflow-hidden">
+                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce"><FileCheck size={40} strokeWidth={3} /></div>
                         <h2 className="text-3xl font-black text-slate-900 mb-3">{T.success_title[lang]}</h2>
-                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">
-                          {T.success_desc[lang]}
-                        </p>
-
+                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">{T.success_desc[lang]}</p>
+                        
                         <div className="flex flex-col gap-4">
-                           <a 
-                              href={pdfUrl}
-                              download="LayananDokumen_Merged.pdf"
-                              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
-                           >
-                              <Download size={24} /> {T.download_btn[lang]}
-                           </a>
-
-                           <button 
-                              onClick={resetAll}
-                              className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
-                           >
-                              <ArrowLeft size={16} /> {T.back_home[lang]}
-                           </button>
+                           <a href={pdfUrl} download="Merged_Document.pdf" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 uppercase tracking-widest text-sm"><Download size={20} /> {T.download_btn[lang]}</a>
+                           <button onClick={() => { setFiles([]); setPdfUrl(null); }} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"><ArrowLeft size={16} /> {T.back_home[lang]}</button>
                         </div>
                     </div>
-
-                    <div className="mt-10 flex justify-center">
-                       <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
-                    </div>
+                    
+                    <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
                 </div>
-
-                <div className="hidden xl:block sticky top-20">
-                   <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
-                </div>
+                
+                <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
              </div>
           </div>
         ) : (
-          /* --- EDITOR --- */
-          <div className="w-full max-w-7xl mx-auto py-6 px-4 md:px-6">
-            <div className="mb-6 flex justify-center">
-              <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
+          // VIEW 3: EDITOR LIST
+          <div className="flex flex-col h-full md:flex-row md:p-6 md:gap-6 max-w-[1600px] mx-auto w-full">
+            {/* MOBILE TABS */}
+            <div className="md:hidden flex border-b border-slate-200 bg-white sticky top-0 z-20 shrink-0">
+               <button onClick={() => setMobileTab(0)} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors ${mobileTab === 0 ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}>{T.tab_files[lang]}</button>
+               <button onClick={() => setMobileTab(1)} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors ${mobileTab === 1 ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}>{T.tab_settings[lang]}</button>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-6">
-              <div className="w-full lg:w-80 space-y-4 shrink-0">
-                  <div className="bg-white p-6 rounded-2xl shadow-xl shadow-blue-100/50 border border-slate-200 animate-in slide-in-from-left duration-500">
-                    <h3 className="font-bold text-[11px] text-slate-400 uppercase mb-5 tracking-[0.1em] flex items-center gap-2"><Settings2 size={14}/> {T.setting[lang]}</h3>
-                    
-                    {/* DROP DOWN QUALITY (VISUAL SAJA UNTUK MERGE) */}
-                    <div className="mb-6">
-                       <span className="text-[10px] font-bold text-slate-500 block mb-2">{T.quality_label[lang]}</span>
-                       <select value={quality} onChange={(e) => setQuality(parseFloat(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-bold text-slate-600 outline-none focus:border-blue-500 transition-colors cursor-pointer">
-                            <option value={0.8}>{T.high[lang]}</option>
-                            <option value={0.5}>{T.med[lang]}</option>
-                            <option value={0.3}>{T.low[lang]}</option>
-                       </select>
+            {/* LIST AREA (LEFT) */}
+            <div className={`flex-1 flex flex-col h-full bg-slate-100 md:bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 md:p-8 overflow-hidden relative ${mobileTab === 0 ? 'flex' : 'hidden md:flex'}`}>
+                {/* Header List */}
+                <div className="hidden md:flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
+                    <h3 className="font-black text-sm text-slate-800 uppercase tracking-tight flex items-center gap-2"><Layers size={18} className="text-blue-500"/> {T.list_title[lang]}</h3>
+                    <div className="flex gap-2">
+                        <button onClick={() => fileInputRef.current?.click()} className="text-[10px] font-bold text-blue-500 hover:bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 flex items-center gap-1 uppercase tracking-wider"><Plus size={12}/> {T.add_more[lang]}</button>
+                        <button onClick={() => setFiles([])} className="text-[10px] font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 uppercase tracking-wider">{T.clear_all[lang]}</button>
                     </div>
+                </div>
 
-                    <p className="text-xs text-slate-500 mb-6">
-                        {lang === 'id' ? 'Tarik dan lepas file di daftar sebelah kanan untuk mengatur urutan PDF.' : 'Drag and drop files in the list on the right to reorder PDF.'}
-                    </p>
-                    
-                    <button onClick={mergePdfs} disabled={files.length < 2 || isProcessing || isGeneratingThumb} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 text-xs active:scale-95 transition-all flex items-center justify-center gap-2">
-                        {(isProcessing || isGeneratingThumb) ? 'LOADING...' : <><Layers size={16}/> {T.convert[lang]}</>}
-                    </button>
-                  </div>
-                  <div className="flex justify-center bg-white border border-dashed border-slate-200 rounded-2xl p-4 shadow-sm">
-                     <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
-                  </div>
-              </div>
+                {/* ADS TOP */}
+                <div className="flex justify-center mb-4 shrink-0 overflow-hidden px-4 md:hidden">
+                   <div className="md:hidden"><AdsterraBanner height={50} width={320} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
+                </div>
 
-              <div className="flex-1 bg-white rounded-2xl shadow-xl shadow-blue-100/50 border border-slate-200 p-8 min-h-[600px] relative animate-in slide-in-from-bottom duration-500">
-                  <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-5">
-                    <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2 tracking-wide"><FileText size={18} className="text-blue-500" /> {T.preview[lang]} <span className="text-blue-600 text-[10px] font-black ml-1 bg-blue-50 px-2 py-0.5 rounded-full">({files.length})</span></h3>
-                    <div className="flex items-center gap-2">
-                       <button onClick={() => fileInputRef.current?.click()} className="text-[10px] font-bold text-blue-500 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors uppercase tracking-widest border border-blue-100 flex items-center gap-1">
-                          <Plus size={12}/> {T.add[lang]}
-                       </button>
-                       {files.length > 0 && <button onClick={() => setFiles([])} className="text-[10px] font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors uppercase tracking-widest">{T.clear[lang]}</button>}
-                    </div>
-                  </div>
+                <div className="flex-1 overflow-y-auto p-2 md:p-0">
+                    <DragDropContext onDragEnd={onDragEnd}>
+                        <Droppable droppableId="pdf-list" direction="vertical">
+                            {(prov) => (
+                                <div {...prov.droppableProps} ref={prov.innerRef} className="space-y-3">
+                                    {files.map((file, i) => (
+                                        <Draggable key={file.id} draggableId={file.id} index={i}>
+                                            {(p, s) => (
+                                                <div ref={p.innerRef} {...p.draggableProps} className={`flex items-center gap-4 p-3 bg-white rounded-xl border transition-all ${s.isDragging ? 'border-blue-500 shadow-xl z-50 scale-105' : 'border-slate-200 hover:border-blue-300'}`}>
+                                                    <div {...p.dragHandleProps} className="text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing p-1"><GripVertical size={20}/></div>
+                                                    
+                                                    {/* Thumbnail Container */}
+                                                    <div className="w-10 h-14 bg-slate-50 border border-slate-100 rounded flex items-center justify-center shrink-0 overflow-hidden relative">
+                                                        {file.thumbnail ? <img src={file.thumbnail} className="w-full h-full object-contain" alt="thumb"/> : <FileText size={20} className="text-slate-300"/>}
+                                                        <div className="absolute bottom-0 right-0 bg-slate-800 text-white text-[8px] px-1 font-bold rounded-tl">{i+1}</div>
+                                                    </div>
 
-                  <DragDropContext onDragEnd={onDragEnd}>
-                    <Droppable droppableId="files-list" direction="vertical">
-                      {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                          {files.map((file, idx) => (
-                            <Draggable key={file.id} draggableId={file.id} index={idx}>
-                              {(provided, snapshot) => (
-                                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} 
-                                    className={`flex items-center gap-4 p-4 bg-slate-50 border rounded-xl transition-all group select-none
-                                    ${snapshot.isDragging ? 'border-blue-500 shadow-xl bg-white z-50' : 'border-slate-200 hover:border-blue-300'}`}>
-                                    <div className="text-slate-300 cursor-grab active:cursor-grabbing"><GripVertical size={18}/></div>
-                                    <div className="w-12 h-16 bg-white rounded border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden relative">
-                                        {/* Tampilkan Preview */}
-                                        {file.thumbnail ? (
-                                           <img src={file.thumbnail} alt="preview" className="w-full h-full object-contain" />
-                                        ) : (
-                                           <FileText size={20} className="text-slate-300"/>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-slate-700 truncate">{file.name}</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">{file.size}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <div className="w-6 h-6 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center text-[10px] font-bold mr-2">{idx + 1}</div>
-                                        <button onClick={() => removeFile(file.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold text-slate-700 truncate">{file.name}</p>
+                                                        <p className="text-[10px] font-medium text-slate-400">{file.size}</p>
+                                                    </div>
+
+                                                    <button onClick={() => removeFile(file.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><X size={16}/></button>
+                                                </div>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {prov.placeholder}
+                                    
+                                    {/* Mobile Add Button */}
+                                    <div onClick={() => fileInputRef.current?.click()} className="md:hidden border-2 border-dashed border-slate-300 bg-slate-50 rounded-xl p-4 flex flex-col items-center justify-center gap-2 text-slate-400">
+                                        <Plus size={24}/> <span className="text-[10px] font-bold uppercase tracking-widest">{T.add_more[lang]}</span>
                                     </div>
                                 </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                          <div onClick={() => fileInputRef.current?.click()} className="relative border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 rounded-xl p-6 flex items-center justify-center gap-3 cursor-pointer transition-all group mt-4">
-                              <input type="file" multiple accept="application/pdf" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                              <div className="bg-white p-2 rounded-full shadow-sm text-blue-500 group-hover:scale-110 transition-transform border border-blue-100"><Plus size={20} /></div>
-                              <span className="text-sm font-bold text-slate-500 uppercase tracking-widest group-hover:text-blue-600">{T.add[lang]}</span>
-                          </div>
-                        </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
-              </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
+                </div>
+
+                {/* ADS BOTTOM */}
+                <div className="flex justify-center mt-4 shrink-0 overflow-hidden px-4">
+                   <div className="hidden md:block"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
+                   <div className="md:hidden"><AdsterraBanner height={50} width={320} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
+                </div>
             </div>
-            
-            <div className="mt-8 flex justify-center">
-              <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
+
+            {/* SIDEBAR (RIGHT) */}
+            <div className={`w-full md:w-80 bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 p-6 overflow-y-auto shrink-0 ${mobileTab === 1 ? 'block' : 'hidden md:block'}`}>
+                <h3 className="font-black text-[10px] text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2"><Settings2 size={14}/> {T.setting_title[lang]}</h3>
+                
+                <div className="space-y-6">
+                    <div>
+                        <label className="text-[10px] font-black text-slate-500 block mb-2 uppercase tracking-widest">{T.quality_label[lang]}</label>
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-xs font-bold text-slate-600 outline-none focus:border-blue-500 transition-colors">
+                             <option value={0.8}>{T.mode_fast[lang]}</option>
+                             <option value={0.8}>{T.mode_safe[lang]}</option>
+                        </select>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 flex justify-center">
+                        <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
+                    </div>
+
+                    <button onClick={handleMerge} disabled={isProcessing || isGeneratingThumb || files.length < 2} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-400 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 mt-4 uppercase text-xs tracking-widest">
+                        {isProcessing ? <Loader2 className="animate-spin" size={18}/> : <Layers size={18}/>} 
+                        {(isProcessing || isGeneratingThumb) ? T.processing[lang] : T.btn_merge[lang]}
+                    </button>
+                </div>
             </div>
           </div>
         )}
       </main>
-
-      <footer className="py-8 text-center bg-white/50 border-t border-slate-100 mt-auto">
-         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">© 2026 LayananDokumen PDF</p>
-      </footer>
     </div>
   );
 }
