@@ -5,22 +5,29 @@ import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { 
   Minimize2, FileText, CheckCircle2, Download, Globe, 
-  X, ArrowLeft, Loader2, Settings2, BarChart3, AlertCircle, ArrowDown
+  X, ArrowLeft, Loader2, Settings2, BarChart3, AlertCircle, ArrowDown,
+  Info, Eye
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
-// 1. SETUP WORKER STABIL (Wajib)
+// 1. SETUP WORKER (WAJIB)
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
 
 export default function CompressPdfPage() {
-  // STATE UTAMA
+  // --- STATE UTAMA ---
   const [file, setFile] = useState<File | null>(null);
   const [fileSize, setFileSize] = useState<string>('');
+  
+  // STATE PREVIEW (Thumbnail Halaman 1)
+  const [inputPreview, setInputPreview] = useState<string | null>(null);
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState('');
+  
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [resultSize, setResultSize] = useState<string>('');
   const [savings, setSavings] = useState<string>('');
@@ -51,39 +58,42 @@ export default function CompressPdfPage() {
   // --- 3. KAMUS ---
   const T = {
     hero_title: { id: 'Kompres PDF Pro', en: 'Compress PDF Pro' },
-    hero_desc: { id: 'Kecilkan ukuran file PDF secara drastis langsung di browser.', en: 'Drastically reduce PDF file size directly in your browser.' },
+    hero_desc: { id: 'Kecilkan ukuran file PDF tanpa merusak teks. Atur kualitas sesuai kebutuhan.', en: 'Reduce PDF size without ruining text. Adjust quality as needed.' },
     select_btn: { id: 'Pilih File PDF', en: 'Select PDF File' },
     drop_text: { id: 'atau tarik file ke sini', en: 'or drop file here' },
     
-    // Tabs & Sidebar
-    tab_stats: { id: 'Statistik', en: 'Stats' },
+    // Sidebar
+    tab_stats: { id: 'Preview', en: 'Preview' }, // Ganti nama tab jadi lebih relevan
     tab_settings: { id: 'Pengaturan', en: 'Settings' },
-    level_label: { id: 'Level Kompresi', en: 'Compression Level' },
+    level_label: { id: 'Pilih Tingkat Kompresi', en: 'Choose Compression Level' },
     
     // Levels
-    level_extreme: { id: 'Ekstrem', en: 'Extreme' },
-    level_extreme_desc: { id: 'Ukuran terkecil, kualitas rendah (72 DPI)', en: 'Smallest size, low quality (72 DPI)' },
-    level_rec: { id: 'Disarankan', en: 'Recommended' },
-    level_rec_desc: { id: 'Keseimbangan terbaik (144 DPI)', en: 'Best balance (144 DPI)' },
-    level_less: { id: 'Rendah', en: 'Low' },
-    level_less_desc: { id: 'Kualitas tinggi, kompresi dikit (200 DPI)', en: 'High quality, less compression (200 DPI)' },
+    level_extreme: { id: 'Ekstrem (Web)', en: 'Extreme (Web)' },
+    level_extreme_desc: { id: 'Ukuran terkecil. Teks mungkin sedikit buram. Cocok untuk dilihat di HP.', en: 'Smallest size. Text might be slightly blurry. Good for mobile.' },
+    
+    level_rec: { id: 'Standar (Disarankan)', en: 'Standard (Recommended)' },
+    level_rec_desc: { id: 'Keseimbangan terbaik. Teks tetap terbaca jelas, ukuran file turun drastis.', en: 'Best balance. Text remains clear, file size drops significantly.' },
+    
+    level_less: { id: 'Kualitas Tinggi (Cetak)', en: 'High Quality (Print)' },
+    level_less_desc: { id: 'Hampir tidak ada penurunan kualitas. Ukuran file berkurang sedikit.', en: 'Almost no quality loss. Slight file size reduction.' },
     
     // Info
-    info_title: { id: 'Cara Kerja', en: 'How it works' },
-    info_text: { id: 'Dokumen akan dikonversi ulang untuk membuang data sampah dan mengoptimalkan gambar.', en: 'Document will be reconverted to remove junk data and optimize images.' },
+    info_title: { id: 'File Terpilih', en: 'Selected File' },
+    info_change: { id: 'Ganti File', en: 'Change File' },
     
     // Actions
-    btn_compress: { id: 'Mulai Kompres', en: 'Start Compress' },
-    btn_download: { id: 'Download PDF', en: 'Download PDF' },
-    btn_repeat: { id: 'Kompres Lain', en: 'Compress Another' },
-    btn_cancel: { id: 'Tutup', en: 'Close' },
+    btn_compress: { id: 'Kompres PDF Sekarang', en: 'Compress PDF Now' },
+    btn_download: { id: 'Download Hasil', en: 'Download Result' },
+    btn_repeat: { id: 'Kompres Lagi', en: 'Compress Again' },
+    btn_cancel: { id: 'Batal', en: 'Cancel' },
     
     // Status
-    processing: { id: 'Mengoptimalkan...', en: 'Optimizing...' },
-    success_title: { id: 'Berhasil Dikecilkan!', en: 'Successfully Reduced!' },
-    success_desc: { id: 'File Anda kini lebih ringan dan siap dikirim.', en: 'Your file is now lighter and ready to send.' },
-    stat_before: { id: 'Sebelum', en: 'Before' },
-    stat_after: { id: 'Sesudah', en: 'After' },
+    processing: { id: 'Sedang memproses halaman', en: 'Processing page' },
+    finalizing: { id: 'Menyusun ulang PDF...', en: 'Rebuilding PDF...' },
+    success_title: { id: 'Kompresi Berhasil!', en: 'Compression Success!' },
+    success_desc: { id: 'Lihat perbedaannya di bawah ini.', en: 'See the difference below.' },
+    stat_before: { id: 'Asli', en: 'Original' },
+    stat_after: { id: 'Hasil', en: 'Result' },
     stat_save: { id: 'Hemat', en: 'Saved' },
   };
 
@@ -95,33 +105,61 @@ export default function CompressPdfPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // --- 4. GENERATE THUMBNAIL ---
+  const generateThumbnail = async (file: File) => {
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) });
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(1); // Ambil halaman 1
+        
+        // Render skala kecil untuk preview (biar ringan)
+        const viewport = page.getViewport({ scale: 0.6 }); 
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        if (context) {
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: context, viewport }).promise;
+            setInputPreview(canvas.toDataURL()); // Simpan gambar ke state
+        }
+    } catch (e) {
+        console.error("Gagal membuat preview:", e);
+        setInputPreview(null); // Jika gagal, null (nanti tampil icon default)
+    }
+  };
+
   const handleFileSelect = (uploadedFile: File) => {
     if (uploadedFile.type !== 'application/pdf') { alert("Mohon pilih file PDF."); return; }
     setFile(uploadedFile);
     setFileSize(formatSize(uploadedFile.size));
     setResultUrl(null);
     setProgress(0);
+    setInputPreview(null); // Reset preview lama
+    
+    // Trigger Generate Thumbnail
+    generateThumbnail(uploadedFile);
   };
 
-  // --- 4. ENGINE KOMPRESI (Rasterization Method) ---
+  // --- 5. ENGINE KOMPRESI ---
   const handleCompress = async () => {
     if (!file) return;
     setIsProcessing(true);
     setProgress(0);
 
-    // Konfigurasi Level
-    let scale = 1.0; 
+    let scale = 1.5; 
     let quality = 0.7;
     
     if (compressionLevel === 'extreme') { 
-        scale = 0.8; // Perkecil resolusi
-        quality = 0.4; // Kualitas JPEG rendah
+        scale = 1.0; 
+        quality = 0.5; 
     } else if (compressionLevel === 'less') { 
-        scale = 1.5; // Resolusi tajam
-        quality = 0.85; // Kualitas JPEG tinggi
+        scale = 3.0; 
+        quality = 0.85; 
     } else {
-        scale = 1.0; // Standar
-        quality = 0.6; // Standar
+        scale = 2.0; 
+        quality = 0.65; 
     }
 
     try {
@@ -129,40 +167,33 @@ export default function CompressPdfPage() {
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) });
         const pdf = await loadingTask.promise;
         const totalPages = pdf.numPages;
-        
-        // Buat PDF Baru
         const newPdf = await PDFDocument.create();
 
         for (let i = 1; i <= totalPages; i++) {
-            // Update Progress
+            setStatusText(`${T.processing[lang]} ${i}/${totalPages}`);
             setProgress(Math.round(((i - 1) / totalPages) * 100));
             
             const page = await pdf.getPage(i);
             const viewport = page.getViewport({ scale: scale });
-            
-            // Render ke Canvas (Membuat ulang halaman sebagai gambar)
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             
             if (context) {
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                
                 await page.render({ canvasContext: context, viewport: viewport }).promise;
                 
-                // Konversi ke JPEG (Kompresi terjadi di sini)
                 const imgDataUrl = canvas.toDataURL('image/jpeg', quality);
                 const img = await newPdf.embedJpg(imgDataUrl);
+                const pageDims = page.getViewport({ scale: 1.0 });
+                const newPage = newPdf.addPage([pageDims.width, pageDims.height]);
                 
-                // Tambah halaman ke PDF baru
-                const newPage = newPdf.addPage([img.width, img.height]);
-                newPage.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+                newPage.drawImage(img, { x: 0, y: 0, width: pageDims.width, height: pageDims.height });
             }
         }
 
+        setStatusText(T.finalizing[lang]);
         const pdfBytes = await newPdf.save();
-        
-        // FIX TYPESCRIPT ERROR: Pakai 'as any'
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         
         setResultSize(formatSize(blob.size));
@@ -175,11 +206,17 @@ export default function CompressPdfPage() {
 
     } catch (error) { 
         console.error(error);
-        alert("Gagal mengompres PDF. Coba level kompresi lain."); 
+        alert("Terjadi kesalahan. PDF mungkin dipassword atau korup."); 
     } finally { 
         setIsProcessing(false); 
     }
   };
+
+  const resetAll = () => {
+      setFile(null);
+      setResultUrl(null);
+      setInputPreview(null);
+  }
 
   if (!isLoaded) return null;
 
@@ -270,7 +307,7 @@ export default function CompressPdfPage() {
                         
                         <div className="flex flex-col gap-3">
                            <a href={resultUrl} download={`Compressed_${file?.name}`} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 uppercase tracking-widest text-sm"><Download size={20} /> {T.btn_download[lang]}</a>
-                           <button onClick={() => { setFile(null); setResultUrl(null); }} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"><ArrowLeft size={16} /> {T.btn_repeat[lang]}</button>
+                           <button onClick={resetAll} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"><ArrowLeft size={16} /> {T.btn_repeat[lang]}</button>
                         </div>
                     </div>
                     
@@ -291,28 +328,43 @@ export default function CompressPdfPage() {
                <button onClick={() => setMobileTab(1)} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors ${mobileTab === 1 ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}>{T.tab_settings[lang]}</button>
             </div>
 
-            {/* KIRI: FILE INFO */}
+            {/* KIRI: FILE INFO & PREVIEW */}
             <div className={`flex-1 flex flex-col h-full bg-slate-100 md:bg-white md:rounded-2xl md:shadow-xl md:border border-slate-200 md:p-8 overflow-hidden relative ${mobileTab === 0 ? 'flex' : 'hidden md:flex'}`}>
-                {/* IKLAN ATAS */}
                 <div className="flex justify-center mb-6 shrink-0">
                    <div className="hidden md:block"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
                    <div className="md:hidden"><AdsterraBanner height={50} width={320} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
                 </div>
                 
-                <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8">
-                    <div className="w-24 h-24 bg-red-100 text-red-500 rounded-3xl flex items-center justify-center shadow-lg shadow-red-100 rotate-3"><FileText size={48} /></div>
-                    <div className="text-center">
-                        <h3 className="text-xl font-black text-slate-800 mb-2 truncate max-w-[280px] mx-auto uppercase tracking-tight">{file.name}</h3>
+                <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
+                    {/* THUMBNAIL AREA */}
+                    <div className="relative group">
+                        <div className="w-48 aspect-[1/1.41] bg-white rounded shadow-lg border border-slate-200 overflow-hidden flex items-center justify-center relative">
+                            {inputPreview ? (
+                                <img src={inputPreview} alt="Preview" className="w-full h-full object-contain" />
+                            ) : (
+                                <div className="text-slate-300 flex flex-col items-center gap-2">
+                                    <Loader2 className="animate-spin" size={32} />
+                                    <span className="text-[10px] font-bold">Rendering...</span>
+                                </div>
+                            )}
+                        </div>
+                        {/* Tombol Ganti File Overlay */}
+                        <button onClick={() => fileInputRef.current?.click()} className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-blue-600 transition-colors flex items-center gap-2 whitespace-nowrap opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-200">
+                            <Eye size={12} /> {T.info_change[lang]}
+                        </button>
+                    </div>
+
+                    <div className="text-center mt-4">
+                        <h3 className="text-lg font-black text-slate-800 mb-1 truncate max-w-[280px] mx-auto uppercase tracking-tight">{file.name}</h3>
                         <span className="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full">{fileSize}</span>
                     </div>
                     
-                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 max-w-md mx-auto text-left">
-                        <h4 className="flex items-center gap-2 text-[10px] font-black text-blue-600 mb-2 uppercase tracking-widest"><AlertCircle size={14}/> {T.info_title[lang]}</h4>
-                        <p className="text-xs text-blue-800 leading-relaxed font-medium">{T.info_text[lang]}</p>
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 max-w-sm mx-auto text-left w-full">
+                        <h4 className="flex items-center gap-2 text-[10px] font-black text-blue-600 mb-2 uppercase tracking-widest"><Info size={14}/> {T.info_title[lang]}</h4>
+                        <p className="text-[11px] text-blue-800 font-medium">Preview halaman pertama ditampilkan di atas. Pastikan file sudah benar sebelum dikompres.</p>
                     </div>
                 </div>
 
-                {/* IKLAN BAWAH */}
                 <div className="flex justify-center mt-6 shrink-0">
                    <div className="hidden md:block"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
                    <div className="md:hidden"><AdsterraBanner height={50} width={320} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
@@ -352,11 +404,10 @@ export default function CompressPdfPage() {
                     </div>
                 </div>
 
-                {/* PROGRESS BAR */}
                 {isProcessing && (
                     <div className="mt-8 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-pulse">
                         <div className="flex justify-between text-[10px] font-black text-slate-500 mb-2 uppercase tracking-widest">
-                            <span>{T.processing[lang]}</span>
+                            <span>{statusText || T.processing[lang]}</span>
                             <span>{progress}%</span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
