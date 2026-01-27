@@ -4,9 +4,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { 
-  FilePenLine, CheckCircle2, Download, X, Loader2, Settings2, 
+  FilePenLine, CheckCircle2, Download, X, ArrowLeft, Loader2, Settings2, 
   Type, Palette, Trash2, ZoomIn, ZoomOut, Maximize2, 
-  Bold, Italic, MousePointer2, Hand
+  Bold, Italic, MousePointer2, Hand, Scaling
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
@@ -120,8 +120,8 @@ export default function EditPdfPage() {
     loading: { id: 'MEMPROSES...', en: 'PROCESSING...' },
     btn_save_lbl: { id: 'Simpan', en: 'Save' },
     success: { id: 'Selesai!', en: 'Done!' },
-    lbl_font: { id: 'Font', en: 'Font' },
-    lbl_style: { id: 'Gaya', en: 'Style' },
+    lbl_font: { id: 'Jenis Font', en: 'Font Family' },
+    lbl_style: { id: 'Gaya Teks', en: 'Text Style' },
     lbl_size: { id: 'Ukuran', en: 'Size' },
     lbl_color: { id: 'Warna', en: 'Color' },
     hint_pan: { id: 'Tahan SPASI + Klik Geser', en: 'Hold SPACE + Drag' },
@@ -318,7 +318,7 @@ export default function EditPdfPage() {
 
   return (
     <div className="min-h-screen bg-[#0F172A] text-slate-200 font-sans flex flex-col overflow-hidden">
-      {/* HEADER */}
+      {/* NAVBAR */}
       <nav className="h-16 border-b border-slate-800 bg-[#0F172A] flex items-center justify-between px-6 z-50 shrink-0 shadow-lg">
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-blue-500/20 shadow-lg"><FilePenLine size={20} /></div>
@@ -442,7 +442,7 @@ export default function EditPdfPage() {
                                        />
                                     ) : ( <span>{el.text}</span> )}
 
-                                    {/* RESIZE HANDLE (GAYA CANVA/PHOTOSHOP) */}
+                                    {/* RESIZE HANDLE (TITIK BULAT PUTIH) */}
                                     {selectedId === el.id && (
                                         <div 
                                             onMouseDown={(e) => onMouseDownResize(e, el)}
@@ -464,6 +464,7 @@ export default function EditPdfPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                    {/* FONT FAMILY */}
                     <div className="space-y-3">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2"><Type size={12}/> {T.lbl_font[lang]}</label>
                         <select 
@@ -477,6 +478,7 @@ export default function EditPdfPage() {
                         </select>
                     </div>
 
+                    {/* STYLE TOGGLES */}
                     <div className="space-y-3">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2"><Palette size={12}/> {T.lbl_style[lang]}</label>
                         <div className="flex gap-2">
@@ -485,6 +487,7 @@ export default function EditPdfPage() {
                         </div>
                     </div>
 
+                    {/* SIZE & COLOR */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-3">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{T.lbl_size[lang]}</label>
