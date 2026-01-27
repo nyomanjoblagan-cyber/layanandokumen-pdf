@@ -1,56 +1,85 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, degrees } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { 
   ImagePlus, FileText, CheckCircle2, Download, Globe, 
-  X, ArrowLeft, Loader2, Settings2, Scaling, Move, Plus, Image as IconImage
+  X, Loader2, Settings2, Scaling, RotateCw, Trash2, Copy, Layers,
+  ChevronUp, ChevronDown, ArrowLeft, MousePointer2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
-// 1. WORKER STABIL (Wajib)
+// --- TIPE DATA ---
+interface AddedImage {
+  id: string;
+  file: File;
+  preview: string;
+  x: number;      
+  y: number;      
+  scale: number;  
+  opacity: number;
+  rotation: number;
+  aspectRatio: number;
+  page: number; 
+}
+
+// 1. WORKER STABIL
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
 
 export default function AddImagePdfPage() {
-  // STATE UTAMA
+  // --- STATE UTAMA ---
   const [file, setFile] = useState<File | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [images, setImages] = useState<AddedImage[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // PDF Preview State
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [pdfDocProxy, setPdfDocProxy] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [pageRotation, setPageRotation] = useState(0); 
   
+  // MULTI-PAGE STATE
+  const [numPages, setNumPages] = useState(0);
+  const [currPage, setCurrPage] = useState(1); 
+
+  // System State
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   
-  // POSITIONING STATE
-  const [imgScale, setImgScale] = useState(30); 
-  const [imgX, setImgX] = useState(50); 
-  const [imgY, setImgY] = useState(50); 
-  const [imgOpacity, setImgOpacity] = useState(1);
-  const [interactionMode, setInteractionMode] = useState<'none' | 'drag' | 'resize'>('none');
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  // --- LOGIKA DRAG ---
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 }); 
+  const [initialImgPos, setInitialImgPos] = useState({ x: 0, y: 0, scale: 0 }); 
 
-  // UI & BAHASA
-  const [lang, setLang] = useState<'id' | 'en'>('id');
-  const [mobileTab, setMobileTab] = useState<0 | 1>(0); 
-  const [isLoaded, setIsLoaded] = useState(false); 
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
-  
-  // Refs
+  const containerRef = useRef<HTMLDivElement>(null);
+  const interactionType = useRef<'none' | 'drag' | 'resize'>('none');
+
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const imgInputRef = useRef<HTMLInputElement>(null);
 
-  // --- 2. LOGIKA BAHASA ---
+  // UI State
+  const [lang, setLang] = useState<'id' | 'en'>('id');
+  const [mobileTab, setMobileTab] = useState<0 | 1>(0); 
+  const [isLoaded, setIsLoaded] = useState(false); 
+
+  // --- INIT ---
   useEffect(() => {
     const saved = localStorage.getItem('user-lang') as 'id' | 'en';
     if (saved) setLang(saved);
     setIsLoaded(true);
-  }, []);
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        removeImage(selectedId);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId]);
 
   const toggleLang = () => {
     const newLang = lang === 'id' ? 'en' : 'id';
@@ -58,202 +87,300 @@ export default function AddImagePdfPage() {
     localStorage.setItem('user-lang', newLang);
   };
 
-  // --- 3. KAMUS ---
   const T = {
     hero_title: { id: 'Tambah Gambar ke PDF', en: 'Add Image to PDF' },
-    hero_desc: { 
-      id: 'Sisipkan foto, logo, atau stempel ke dalam dokumen PDF Anda. Atur posisi dan transparansi.', 
-      en: 'Insert photos, logos, or stamps into your PDF document. Adjust position and transparency.' 
-    },
+    hero_desc: { id: 'Sisipkan foto, logo, atau stempel. Mendukung banyak halaman.', en: 'Insert photos, logos, or stamps. Supports multi-page PDFs.' },
     select_pdf: { id: 'Pilih File PDF', en: 'Select PDF File' },
-    select_img: { id: 'Pilih Gambar', en: 'Select Image' },
-    drop_text: { id: 'atau tarik file ke sini', en: 'or drop file here' },
-    
-    // Tabs
     tab_editor: { id: 'Editor', en: 'Editor' },
     tab_settings: { id: 'Pengaturan', en: 'Settings' },
-    
-    // Settings
-    label_size: { id: 'Ukuran Gambar', en: 'Image Size' },
-    label_opacity: { id: 'Transparansi', en: 'Opacity' },
-    
-    // Actions
+    add_img: { id: 'Tambah Gambar', en: 'Add Image' },
+    layers: { id: 'Urutan Layer', en: 'Layer Order' },
+    opacity: { id: 'Transparansi', en: 'Opacity' },
+    scale: { id: 'Ukuran', en: 'Size' },
+    rotate_img: { id: 'Putar Gambar', en: 'Rotate Image' },
+    rotate_pdf: { id: 'Putar Tampilan', en: 'Rotate View' },
     save_btn: { id: 'Simpan PDF', en: 'Save PDF' },
-    change_img: { id: 'Ganti Gambar', en: 'Change Image' },
-    
-    // Status
+    delete: { id: 'Hapus', en: 'Remove' },
+    duplicate: { id: 'Duplikat', en: 'Duplicate' },
     loading: { id: 'MEMUAT...', en: 'LOADING...' },
     saving: { id: 'MENYIMPAN...', en: 'SAVING...' },
-    
-    // Success
     success_title: { id: 'Berhasil!', en: 'Success!' },
-    success_desc: { id: 'Gambar berhasil disisipkan ke PDF.', en: 'Image successfully inserted into PDF.' },
+    success_desc: { id: 'Gambar berhasil disisipkan.', en: 'Image successfully inserted.' },
     download_btn: { id: 'Download PDF', en: 'Download PDF' },
     back_home: { id: 'Edit Lagi', en: 'Edit Another' },
     cancel: { id: 'Tutup', en: 'Close' },
-    
-    drag_hint: { id: 'Tekan & Tahan gambar untuk memindahkan', en: 'Press & Hold image to move' }
+    no_selection: { id: 'Klik gambar untuk mengedit', en: 'Click image to edit' },
+    page: { id: 'Hal', en: 'Page' }
   };
 
-  // --- 4. HANDLE UPLOAD PDF ---
-  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) processPdf(e.target.files[0]);
-  };
-
-  const processPdf = async (uploadedFile: File) => {
-    if (uploadedFile.type !== 'application/pdf') { alert("Mohon pilih file PDF."); return; }
-    setFile(uploadedFile);
-    setIsProcessing(true);
-    setPdfUrl(null);
-
+  // --- PDF RENDER ---
+  const renderPage = async (pdf: pdfjsLib.PDFDocumentProxy, pageNumber: number, rotation: number) => {
     try {
-        const arrayBuffer = await uploadedFile.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-        const pdf = await loadingTask.promise;
-        const page = await pdf.getPage(1);
-        
-        const viewport = page.getViewport({ scale: 1.5 });
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 1.5, rotation: rotation }); 
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        
         if (context) {
             canvas.height = viewport.height;
             canvas.width = viewport.width;
             await page.render({ canvasContext: context, viewport }).promise;
             setPdfPreview(canvas.toDataURL());
         }
+    } catch (error) {
+        console.error("Error rendering page:", error);
+    }
+  };
+
+  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) processPdf(e.target.files[0]);
+  };
+
+  const processPdf = async (uploadedFile: File) => {
+    if (uploadedFile.type !== 'application/pdf') { alert("Harus file PDF!"); return; }
+    setFile(uploadedFile);
+    setIsProcessing(true);
+    setPdfUrl(null);
+    setPageRotation(0);
+    setImages([]); 
+    setPdfPreview(null);
+    setCurrPage(1); 
+
+    try {
+        const arrayBuffer = await uploadedFile.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        setPdfDocProxy(pdf);
+        setNumPages(pdf.numPages); 
+        await renderPage(pdf, 1, 0); 
     } catch (e) { alert("Gagal memuat PDF."); setFile(null); } finally { setIsProcessing(false); }
   };
 
-  // --- 5. HANDLE UPLOAD IMAGE ---
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // --- PAGE NAVIGATION ---
+  const changePage = (offset: number) => {
+      if (!pdfDocProxy) return;
+      const newPage = currPage + offset;
+      if (newPage >= 1 && newPage <= numPages) {
+          setCurrPage(newPage);
+          setSelectedId(null); 
+          renderPage(pdfDocProxy, newPage, pageRotation);
+      }
+  };
+
+  const rotatePdf = () => {
+    if (!pdfDocProxy) return;
+    const newRotation = (pageRotation + 90) % 360;
+    setPageRotation(newRotation);
+    renderPage(pdfDocProxy, currPage, newRotation);
+  };
+
+  // --- IMAGE LOGIC ---
+  const handleAddImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-        const img = e.target.files[0];
-        if (!img.type.startsWith('image/')) { alert("File harus berupa gambar."); return; }
-        setImageFile(img);
-        setImagePreview(URL.createObjectURL(img));
+        const imgFile = e.target.files[0];
+        const previewUrl = URL.createObjectURL(imgFile);
+        const img = new Image();
+        img.src = previewUrl;
+        img.onload = () => {
+            const aspectRatio = img.width / img.height;
+            const newImage: AddedImage = {
+                id: Date.now().toString(), 
+                file: imgFile, 
+                preview: previewUrl, 
+                x: 50, y: 50, scale: 30, opacity: 1, rotation: 0, 
+                aspectRatio: aspectRatio,
+                page: currPage 
+            };
+            setImages(prev => [...prev, newImage]);
+            setSelectedId(newImage.id); 
+            setMobileTab(1); 
+            if (imgInputRef.current) imgInputRef.current.value = '';
+        };
     }
   };
 
-  // --- 6. DRAG & DROP LOGIC (SAMA SEPERTI SIGNATURE) ---
-  const handleStartInteraction = (e: React.MouseEvent | React.TouchEvent, type: 'drag' | 'resize') => {
+  const updateSelectedImage = (field: keyof AddedImage, value: any) => {
+    if (!selectedId) return;
+    setImages(prev => prev.map(img => img.id === selectedId ? { ...img, [field]: value } : img));
+  };
+
+  const removeImage = (id: string) => {
+    setImages(prev => prev.filter(img => img.id !== id));
+    if (selectedId === id) setSelectedId(null);
+  };
+
+  const duplicateImage = (id: string) => {
+    const target = images.find(img => img.id === id);
+    if (target) {
+        const newImage = { 
+            ...target, 
+            id: Date.now().toString(), 
+            x: target.x + 5, y: target.y + 5,
+            page: currPage 
+        };
+        setImages(prev => [...prev, newImage]);
+        setSelectedId(newImage.id);
+    }
+  };
+
+  // --- LAYER LOGIC ---
+  const moveLayer = (direction: 'up' | 'down') => {
+    if (!selectedId) return;
+    const index = images.findIndex(img => img.id === selectedId);
+    if (index === -1) return;
+    
+    const newImages = [...images];
+    if (direction === 'up' && index < newImages.length - 1) {
+        [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
+    } else if (direction === 'down' && index > 0) {
+        [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]];
+    }
+    setImages(newImages);
+  };
+
+  // --- LOGIKA DRAG ---
+  const handleStartInteraction = (e: React.MouseEvent | React.TouchEvent, type: 'drag' | 'resize', id: string) => {
     e.stopPropagation();
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
+    if (e.type !== 'touchstart') e.preventDefault(); 
+    
+    setSelectedId(id);
+    const img = images.find(i => i.id === id);
+    if (!img) return;
+
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
 
-    if (type === 'drag') {
-        const currentXPx = (imgX / 100) * rect.width;
-        const currentYPx = (imgY / 100) * rect.height;
-        setDragOffset({
-            x: (clientX - rect.left) - currentXPx,
-            y: (clientY - rect.top) - currentYPx
-        });
-    }
-    setInteractionMode(type);
+    setIsDragging(type === 'drag');
+    setDragStart({ x: clientX, y: clientY });
+    setInitialImgPos({ x: img.x, y: img.y, scale: img.scale });
+    interactionType.current = type;
   };
 
   const handleInteractionMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (interactionMode === 'none' || !containerRef.current) return;
+    if (interactionType.current === 'none' || !selectedId || !containerRef.current) return;
+    e.preventDefault(); 
+
     const rect = containerRef.current.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
 
-    if (interactionMode === 'drag') {
-        let newX = ((clientX - rect.left - dragOffset.x) / rect.width) * 100;
-        let newY = ((clientY - rect.top - dragOffset.y) / rect.height) * 100;
-        newX = Math.max(0, Math.min(100, newX));
-        newY = Math.max(0, Math.min(100, newY));
-        setImgX(newX);
-        setImgY(newY);
-    } else if (interactionMode === 'resize') {
-        const centerX = rect.left + (imgX / 100) * rect.width;
-        const dist = Math.abs(clientX - centerX);
-        const newScale = (dist * 2 / rect.width) * 100;
-        setImgScale(Math.max(5, Math.min(90, newScale)));
+    const deltaX = clientX - dragStart.x;
+    const deltaY = clientY - dragStart.y;
+
+    if (interactionType.current === 'drag') {
+        const deltaXPercent = (deltaX / rect.width) * 100;
+        const deltaYPercent = (deltaY / rect.height) * 100;
+        let newX = initialImgPos.x + deltaXPercent;
+        let newY = initialImgPos.y + deltaYPercent;
+        newX = Math.max(-20, Math.min(120, newX));
+        newY = Math.max(-20, Math.min(120, newY));
+        setImages(prev => prev.map(img => img.id === selectedId ? { ...img, x: newX, y: newY } : img));
+
+    } else if (interactionType.current === 'resize') {
+        const deltaScale = (deltaX / rect.width) * 100;
+        let newScale = initialImgPos.scale + deltaScale;
+        newScale = Math.max(5, Math.min(150, newScale));
+        setImages(prev => prev.map(img => img.id === selectedId ? { ...img, scale: newScale } : img));
     }
   };
 
-  const handleEndInteraction = () => setInteractionMode('none');
+  const handleEndInteraction = () => {
+    interactionType.current = 'none';
+    setIsDragging(false);
+  };
 
-  // --- 7. SAVE PDF ---
+  // --- SAVE LOGIC (FIXED TYPESCRIPT ERROR) ---
   const handleSave = async () => {
-    if (!file || !imageFile) return;
+    if (!file || images.length === 0) return;
     setIsSaving(true);
-
     try {
-        const pdfBuffer = await file.arrayBuffer();
-        const imgBuffer = await imageFile.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(pdfBuffer);
+        const pdfDoc = await PDFDocument.load(await file.arrayBuffer());
+        const pages = pdfDoc.getPages(); 
         
-        let embeddedImage;
-        if (imageFile.type === 'image/png') {
-            embeddedImage = await pdfDoc.embedPng(imgBuffer);
-        } else {
-            embeddedImage = await pdfDoc.embedJpg(imgBuffer);
+        for (let i = 0; i < pages.length; i++) {
+            const pageIndex = i + 1;
+            const page = pages[i];
+            
+            const imagesOnThisPage = images.filter(img => img.page === pageIndex);
+            
+            if (imagesOnThisPage.length > 0) {
+                 if (pageRotation !== 0) {
+                    const currentRotation = page.getRotation().angle;
+                    page.setRotation(degrees(currentRotation + pageRotation));
+                 }
+
+                 const { width, height } = page.getSize();
+                 let effectiveWidth = width;
+                 let effectiveHeight = height;
+                 
+                 if (pageRotation === 90 || pageRotation === 270) {
+                      effectiveWidth = height;
+                      effectiveHeight = width;
+                 }
+
+                 for (const imgData of imagesOnThisPage) {
+                    const imgBuffer = await imgData.file.arrayBuffer();
+                    let embeddedImage;
+                    if (imgData.file.type === 'image/png') embeddedImage = await pdfDoc.embedPng(imgBuffer);
+                    else embeddedImage = await pdfDoc.embedJpg(imgBuffer);
+
+                    const tWidth = (imgData.scale / 100) * effectiveWidth;
+                    const tHeight = tWidth / imgData.aspectRatio;
+                    const pdfX = (imgData.x / 100) * effectiveWidth;
+                    const pdfY = effectiveHeight - ((imgData.y / 100) * effectiveHeight);
+                    
+                    page.drawImage(embeddedImage, {
+                        x: pdfX - (tWidth / 2),
+                        y: pdfY - (tHeight / 2), 
+                        width: tWidth, height: tHeight, opacity: imgData.opacity,
+                        rotate: degrees(-imgData.rotation) 
+                    });
+                 }
+            }
         }
-
-        const pages = pdfDoc.getPages();
-        // Terapkan ke halaman 1 (bisa dikembangkan ke all pages)
-        const page = pages[0]; 
-        const { width, height } = page.getSize();
-
-        const tWidth = (imgScale / 100) * width;
-        const tHeight = embeddedImage.height * (tWidth / embeddedImage.width);
-        const pdfX = (imgX / 100) * width - (tWidth / 2);
-        const pdfY = height - ((imgY / 100) * height) - (tHeight / 2);
-
-        page.drawImage(embeddedImage, {
-            x: pdfX, y: pdfY, width: tWidth, height: tHeight, opacity: imgOpacity
-        });
-
+        
         const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-        setPdfUrl(URL.createObjectURL(blob));
-
-    } catch (e) { alert("Gagal menyimpan."); } finally { setIsSaving(false); }
+        // FIX: Cast to any to avoid TypeScript strictness error
+        setPdfUrl(URL.createObjectURL(new Blob([pdfBytes as any], { type: 'application/pdf' })));
+    } catch (e) { alert("Error saving."); } finally { setIsSaving(false); }
   };
 
   const resetAll = () => {
-    setFile(null);
-    setImageFile(null);
-    setPdfUrl(null);
-    setPdfPreview(null);
-    setImagePreview(null);
+    setFile(null); setImages([]); setPdfUrl(null); setPdfPreview(null); setPageRotation(0); setCurrPage(1);
+  };
+
+  const handleBackgroundClick = () => {
+      setSelectedId(null);
   };
 
   if (!isLoaded) return null;
 
   return (
     <div 
-      className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans flex flex-col overflow-hidden"
+      className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans flex flex-col overflow-hidden select-none"
       onMouseMove={handleInteractionMove} 
       onTouchMove={handleInteractionMove} 
       onMouseUp={handleEndInteraction} 
       onTouchEnd={handleEndInteraction}
     >
-      <nav className="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-50 shrink-0 shadow-sm">
+      <nav className="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm shrink-0">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-green-600 text-white p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><ImagePlus size={20} /></div>
+          <div className="bg-green-600 text-white p-1.5 rounded-lg group-hover:scale-105 transition-transform"><ImagePlus size={20} /></div>
           <span className="font-bold text-xl tracking-tight text-slate-900 italic uppercase">Add<span className="text-green-600">Image</span></span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
            <button onClick={toggleLang} className="text-[10px] font-bold px-3 py-1.5 bg-slate-100 rounded-lg hover:bg-slate-200 transition-all uppercase tracking-widest text-slate-600">{lang}</button>
            <Link href="/" className="flex items-center gap-2 text-xs font-bold text-red-400 hover:text-red-500 transition-colors bg-red-50 px-4 py-2 rounded-lg border border-slate-100">
-              <X size={16} /> {T.cancel[lang]}
+             <X size={16} /> {T.cancel[lang]}
            </Link>
         </div>
       </nav>
 
       <main className="flex-1 flex flex-col h-[calc(100vh-64px)] overflow-hidden relative">
         
-        {/* STATE 1: UPLOAD PDF */}
         {!file ? (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#F8FAFC]">
              <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
                 <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
-                
                 <div className="flex-1 max-w-2xl space-y-10 animate-in fade-in zoom-in duration-500 py-10">
                     <div className="flex justify-center"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
                     <div className="space-y-4 px-4">
@@ -264,133 +391,211 @@ export default function AddImagePdfPage() {
                         <button onClick={() => pdfInputRef.current?.click()} className="group relative bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-5 px-16 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
                            {isProcessing ? <Loader2 className="animate-spin" size={24}/> : <FileText size={24} />} {isProcessing ? T.loading[lang] : T.select_pdf[lang]}
                         </button>
-                        <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">{T.drop_text[lang]}</p>
                     </div>
                     <div className="flex justify-center mt-8"><AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" /></div>
                     <input type="file" accept="application/pdf" ref={pdfInputRef} onChange={handlePdfUpload} className="hidden" />
                  </div>
-
                 <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
              </div>
           </div>
         ) : pdfUrl ? (
-          // STATE 3: SUCCESS
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-white overflow-y-auto">
-             <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
+              <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
                 <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
                 <div className="flex-1 max-w-lg space-y-8 animate-in slide-in-from-bottom duration-500">
                     <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
                     <div className="bg-white border border-slate-200 rounded-[30px] p-10 text-center shadow-2xl relative overflow-hidden">
                         <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce"><CheckCircle2 size={40} strokeWidth={3} /></div>
                         <h2 className="text-3xl font-black text-slate-900 mb-3">{T.success_title[lang]}</h2>
-                        <p className="text-slate-500 font-medium mb-8">{T.success_desc[lang]}</p>
                         <div className="flex flex-col gap-4">
-                           <a href={pdfUrl} download={`ImageAdded_${file?.name}`} className="w-full bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 uppercase tracking-widest text-sm"><Download size={20} /> {T.download_btn[lang]}</a>
+                           <a href={pdfUrl} download={`ImageAdded_${file?.name}`} className="w-full bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"><Download size={20} /> {T.download_btn[lang]}</a>
                            <button onClick={resetAll} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"><ArrowLeft size={16} /> {T.back_home[lang]}</button>
                         </div>
                     </div>
-                    <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
+                    <div className="flex justify-center mt-8"><AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" /></div>
                 </div>
                 <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
-             </div>
+              </div>
           </div>
         ) : (
-          // STATE 2: EDITOR (UPLOAD IMAGE & DRAG)
           <div className="flex flex-col h-full md:flex-row md:p-6 md:gap-6 max-w-[1600px] mx-auto w-full">
-            
-            {/* MOBILE TABS */}
             <div className="md:hidden flex border-b border-slate-200 bg-white sticky top-0 z-20 shrink-0">
                <button onClick={() => setMobileTab(0)} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors ${mobileTab === 0 ? 'border-green-600 text-green-600' : 'border-transparent text-slate-400'}`}>{T.tab_editor[lang]}</button>
                <button onClick={() => setMobileTab(1)} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors ${mobileTab === 1 ? 'border-green-600 text-green-600' : 'border-transparent text-slate-400'}`}>{T.tab_settings[lang]}</button>
             </div>
 
-            {/* PREVIEW AREA (LEFT) */}
-            <div className={`flex-1 flex flex-col h-full bg-slate-100 md:bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 md:p-8 overflow-hidden relative ${mobileTab === 0 ? 'flex' : 'hidden md:flex'}`}>
+            <div 
+                className={`flex-1 bg-slate-100 md:bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 md:p-8 flex flex-col relative overflow-hidden ${mobileTab === 0 ? 'flex' : 'hidden md:flex'}`}
+                onClick={handleBackgroundClick}
+            >
                 <div className="flex justify-center mb-4 shrink-0 overflow-hidden px-4">
                    <div className="hidden md:block"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
                    <div className="md:hidden"><AdsterraBanner height={50} width={320} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
                 </div>
 
-                <div className="flex-1 flex items-center justify-center p-4 overflow-auto min-h-[400px]">
-                    <div ref={containerRef} className="relative shadow-2xl border-4 border-white bg-white max-w-full select-none">
+                {/* TOP TOOLBAR: PAGINATION & ROTATION */}
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 backdrop-blur p-1.5 rounded-full shadow-lg border border-slate-200 items-center">
+                     {/* Pagination Controls */}
+                     <div className="flex items-center gap-1 bg-slate-100 rounded-full px-1">
+                        <button 
+                            onClick={(e) => {e.stopPropagation(); changePage(-1);}} 
+                            disabled={currPage <= 1}
+                            className="p-1.5 hover:bg-white rounded-full text-slate-600 disabled:opacity-30 disabled:hover:bg-transparent"
+                        >
+                            <ChevronLeft size={16}/>
+                        </button>
+                        <span className="text-[10px] font-bold text-slate-500 w-16 text-center">{T.page[lang]} {currPage} / {numPages}</span>
+                        <button 
+                            onClick={(e) => {e.stopPropagation(); changePage(1);}} 
+                            disabled={currPage >= numPages}
+                            className="p-1.5 hover:bg-white rounded-full text-slate-600 disabled:opacity-30 disabled:hover:bg-transparent"
+                        >
+                            <ChevronRight size={16}/>
+                        </button>
+                     </div>
+
+                     <div className="w-px bg-slate-300 mx-1 h-4"></div>
+                     <button onClick={(e) => {e.stopPropagation(); rotatePdf();}} className="p-2 hover:bg-slate-100 rounded-full text-slate-600 tooltip" title={T.rotate_pdf[lang]}><RotateCw size={18}/></button>
+                     <div className="w-px bg-slate-300 mx-1 h-4"></div>
+                     <button onClick={(e) => {e.stopPropagation(); setImages([]);}} className="p-2 hover:bg-red-50 text-red-500 rounded-full" title="Clear All"><Trash2 size={18}/></button>
+                </div>
+
+                <div className="flex-1 overflow-auto flex items-center justify-center p-4">
+                    <div 
+                        ref={containerRef} 
+                        className="relative shadow-2xl border-4 border-white bg-white select-none transition-all duration-200"
+                        onClick={(e) => e.stopPropagation()} 
+                    >
                         {pdfPreview ? (
-                           <img src={pdfPreview} alt="Preview" className="max-w-full max-h-[50vh] md:max-h-[600px] object-contain pointer-events-none block" />
+                           <img src={pdfPreview} className="max-h-[50vh] md:max-h-[600px] object-contain pointer-events-none block" draggable={false} />
                         ) : (
-                           <div className="w-[400px] h-[600px] flex items-center justify-center"><Loader2 className="animate-spin text-slate-300" size={40}/></div>
+                           <div className="w-[300px] h-[400px] flex items-center justify-center"><Loader2 className="animate-spin text-slate-300" size={40}/></div>
                         )}
                         
-                        {/* IMAGE OVERLAY */}
-                        {imagePreview && (
+                        {/* HANYA RENDER GAMBAR YANG ADA DI HALAMAN INI */}
+                        {images.filter(img => img.page === currPage).map((img, index) => (
                             <div 
-                              onMouseDown={(e) => handleStartInteraction(e, 'drag')} 
-                              onTouchStart={(e) => handleStartInteraction(e, 'drag')} 
-                              className={`absolute cursor-move group touch-none ${interactionMode === 'drag' ? 'cursor-grabbing' : 'cursor-grab'}`} 
+                              key={img.id}
+                              onMouseDown={(e) => handleStartInteraction(e, 'drag', img.id)}
+                              onTouchStart={(e) => handleStartInteraction(e, 'drag', img.id)}
+                              onClick={(e) => e.stopPropagation()} 
+                              className="absolute cursor-move group touch-none" 
                               style={{ 
-                                left: `${imgX}%`, 
-                                top: `${imgY}%`, 
-                                width: `${imgScale}%`, 
-                                transform: 'translate(-50%, -50%)', 
-                                opacity: imgOpacity
+                                left: `${img.x}%`, 
+                                top: `${img.y}%`, 
+                                width: `${img.scale}%`, 
+                                transform: `translate(-50%, -50%) rotate(${img.rotation}deg)`, 
+                                opacity: img.opacity,
+                                aspectRatio: `${img.aspectRatio}/1`,
+                                zIndex: 10 + index 
                               }}
                             >
-                                <img src={imagePreview} alt="Overlay" className="w-full border-2 border-dashed border-blue-400/0 group-hover:border-blue-400 rounded p-1 transition-all pointer-events-none" />
-                                {/* Resize Handle */}
-                                <div 
-                                  onMouseDown={(e) => handleStartInteraction(e, 'resize')}
-                                  onTouchStart={(e) => handleStartInteraction(e, 'resize')}
-                                  className="absolute -bottom-2 -right-2 w-6 h-6 bg-blue-600 rounded-full border-2 border-white cursor-nwse-resize shadow-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                >
-                                   <Scaling size={12} className="text-white"/>
-                                </div>
+                                <img 
+                                    src={img.preview} 
+                                    className={`w-full h-full object-contain pointer-events-none transition-all select-none ${selectedId === img.id ? 'border-2 border-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.2)]' : 'border border-transparent hover:border-green-300/50'}`} 
+                                    draggable={false}
+                                />
+                                {selectedId === img.id && (
+                                    <div className="absolute -top-3 -left-3 bg-green-600 text-white text-[8px] px-1.5 py-0.5 rounded shadow z-50 whitespace-nowrap">
+                                        Layer {index + 1}
+                                    </div>
+                                )}
+                                {selectedId === img.id && (
+                                    <div 
+                                        onMouseDown={(e) => handleStartInteraction(e, 'resize', img.id)}
+                                        onTouchStart={(e) => handleStartInteraction(e, 'resize', img.id)}
+                                        className="absolute -bottom-3 -right-3 w-8 h-8 bg-green-600 rounded-full border-2 border-white cursor-nwse-resize shadow-lg flex items-center justify-center z-[999] hover:scale-125 transition-transform touch-none"
+                                    >
+                                        <Scaling size={14} className="text-white"/>
+                                    </div>
+                                )}
                             </div>
-                        )}
+                        ))}
                     </div>
                 </div>
-
-                <div className="flex justify-center mt-4 shrink-0 overflow-hidden px-4">
-                   <div className="hidden md:block"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
-                   <div className="md:hidden"><AdsterraBanner height={50} width={320} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
-                </div>
-
-                {imagePreview && <p className="text-center text-[10px] text-blue-600 font-black uppercase mt-4 mb-2 bg-blue-50 py-2 px-4 rounded-full mx-auto w-fit border border-blue-100 animate-pulse">{T.drag_hint[lang]}</p>}
             </div>
 
-            {/* SIDEBAR (RIGHT) */}
             <div className={`w-full md:w-96 bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 p-6 overflow-y-auto shrink-0 ${mobileTab === 1 ? 'block' : 'hidden md:block'}`}>
                 <h3 className="font-black text-[10px] text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2"><Settings2 size={14}/> {T.tab_settings[lang]}</h3>
-                
-                {/* UPLOAD IMAGE BUTTON */}
-                <div className="mb-6">
-                    <button onClick={() => imgInputRef.current?.click()} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition-all gap-2 group">
-                        {imagePreview ? <img src={imagePreview} className="h-16 object-contain" /> : <IconImage size={24}/>}
-                        <span className="text-[10px] font-bold uppercase tracking-widest">{imagePreview ? T.change_img[lang] : T.select_img[lang]}</span>
+
+                <div className="space-y-6">
+                    <button onClick={() => imgInputRef.current?.click()} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition-all gap-2 group font-bold">
+                        <ImagePlus size={20}/> {T.add_img[lang]}
                     </button>
-                    <input type="file" accept="image/*" ref={imgInputRef} onChange={handleImageUpload} className="hidden" />
-                </div>
+                    <input type="file" multiple accept="image/*" ref={imgInputRef} onChange={handleAddImage} className="hidden" />
 
-                {imagePreview && (
-                    <div className="space-y-6">
-                        {/* Size Slider */}
-                        <div>
-                            <label className="text-[10px] font-black text-slate-500 block mb-2 uppercase tracking-widest flex items-center gap-2"><Scaling size={12}/> {T.label_size[lang]}</label>
-                            <input type="range" min="5" max="80" value={imgScale} onChange={(e) => setImgScale(parseInt(e.target.value))} className="w-full accent-green-600 h-1.5 bg-slate-200 rounded-full cursor-pointer" />
+                    {selectedId ? (
+                        <div className="space-y-6 animate-in slide-in-from-right duration-200">
+                             <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                                <img src={images.find(i => i.id === selectedId)?.preview} className="w-12 h-12 rounded bg-slate-100 object-cover border border-slate-200"/>
+                                <div>
+                                    <p className="text-xs font-bold text-slate-700 uppercase">Layer Selected</p>
+                                    <p className="text-[10px] text-slate-400">On Page {currPage}</p>
+                                </div>
+                                <div className="ml-auto flex gap-1">
+                                    <button onClick={() => duplicateImage(selectedId)} className="p-2 hover:bg-green-50 text-green-600 rounded-lg border border-slate-100 hover:border-green-200"><Copy size={16}/></button>
+                                    <button onClick={() => removeImage(selectedId)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg border border-slate-100 hover:border-red-200"><Trash2 size={16}/></button>
+                                </div>
+                             </div>
+
+                             <div>
+                                <label className="text-[10px] font-black text-slate-500 block mb-2 uppercase tracking-widest flex items-center gap-2 justify-between">
+                                    <span className="flex gap-2 items-center"><Globe size={12}/> {T.opacity[lang]}</span>
+                                    <span>{Math.round((images.find(i => i.id === selectedId)?.opacity || 1) * 100)}%</span>
+                                </label>
+                                <input 
+                                    type="range" min="0.1" max="1" step="0.1" 
+                                    value={images.find(i => i.id === selectedId)?.opacity || 1} 
+                                    onChange={(e) => updateSelectedImage('opacity', parseFloat(e.target.value))} 
+                                    className="w-full accent-green-600 h-1.5 bg-slate-200 rounded-full" 
+                                />
+                             </div>
+
+                             <div>
+                                <label className="text-[10px] font-black text-slate-500 block mb-2 uppercase tracking-widest flex items-center gap-2"><Scaling size={12}/> {T.scale[lang]}</label>
+                                <input 
+                                    type="range" min="5" max="150" 
+                                    value={images.find(i => i.id === selectedId)?.scale || 30} 
+                                    onChange={(e) => updateSelectedImage('scale', parseInt(e.target.value))} 
+                                    className="w-full accent-green-600 h-1.5 bg-slate-200 rounded-full" 
+                                />
+                             </div>
+
+                             <div>
+                                <label className="text-[10px] font-black text-slate-500 block mb-2 uppercase tracking-widest flex items-center gap-2 justify-between">
+                                    <span className="flex gap-2 items-center"><RotateCw size={12}/> {T.rotate_img[lang]}</span>
+                                    <span>{images.find(i => i.id === selectedId)?.rotation || 0}°</span>
+                                </label>
+                                <input 
+                                    type="range" min="0" max="360" step="5" 
+                                    value={images.find(i => i.id === selectedId)?.rotation || 0} 
+                                    onChange={(e) => updateSelectedImage('rotation', parseInt(e.target.value))} 
+                                    className="w-full accent-green-600 h-1.5 bg-slate-200 rounded-full" 
+                                />
+                             </div>
+
+                             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <p className="text-[10px] font-black text-slate-400 uppercase mb-2">{T.layers[lang]}</p>
+                                <div className="flex gap-2">
+                                    <button onClick={() => moveLayer('up')} className="flex-1 py-2 bg-white border border-slate-200 rounded hover:bg-slate-50 flex justify-center text-slate-600 gap-2 text-xs font-bold hover:text-green-600"><ChevronUp size={16}/> Ke Depan</button>
+                                    <button onClick={() => moveLayer('down')} className="flex-1 py-2 bg-white border border-slate-200 rounded hover:bg-slate-50 flex justify-center text-slate-600 gap-2 text-xs font-bold hover:text-green-600"><ChevronDown size={16}/> Ke Belakang</button>
+                                </div>
+                             </div>
                         </div>
-
-                        {/* Opacity Slider */}
-                        <div>
-                            <label className="text-[10px] font-black text-slate-500 block mb-2 uppercase tracking-widest flex items-center gap-2"><Globe size={12}/> {T.label_opacity[lang]}</label>
-                            <input type="range" min="0.1" max="1" step="0.1" value={imgOpacity} onChange={(e) => setImgOpacity(parseFloat(e.target.value))} className="w-full accent-green-600 h-1.5 bg-slate-200 rounded-full cursor-pointer" />
+                    ) : (
+                        <div className="h-40 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-center p-4">
+                            <MousePointer2 size={32} className="mb-2 opacity-20"/>
+                            <p className="text-xs font-medium text-slate-400">{T.no_selection[lang]}</p>
+                            <p className="text-[10px] text-slate-300 mt-1">Klik latar belakang untuk membatalkan pilihan</p>
                         </div>
-
-                        <div className="pt-4 border-t border-slate-100 flex justify-center">
-                            <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
-                        </div>
-
-                        <button onClick={handleSave} disabled={isSaving} className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-300 disabled:text-slate-400 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 mt-4 uppercase text-xs tracking-widest">
-                            {isSaving ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle2 size={18}/>} {T.save_btn[lang]}
-                        </button>
+                    )}
+                    <div className="pt-4 border-t border-slate-100 flex justify-center">
+                        <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
                     </div>
-                )}
+                    <button onClick={handleSave} disabled={isSaving || images.length === 0} className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 uppercase text-xs tracking-widest">
+                        {isSaving ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle2 size={18}/>} {T.save_btn[lang]}
+                    </button>
+                </div>
             </div>
           </div>
         )}
