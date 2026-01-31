@@ -8,7 +8,7 @@ import {
   Minimize, Layers, Trash2, FileSignature, BookOpen, FileImage, 
   BadgeCheck, Maximize, FileUp, Camera, FilePenLine, Stamp, 
   Layout, FileCode, ExternalLink, Zap, Star, SearchX, Sparkles,
-  Grid3x3, Shield, Edit3, GitMerge, CheckCircle, FileDown
+  Grid3x3, Shield, Edit3, GitMerge, CheckCircle
 } from 'lucide-react';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
@@ -37,8 +37,8 @@ const TOOLS = [
     id: 'merge-pdf', 
     title: { id: 'Gabung PDF', en: 'Merge PDF' }, 
     desc: { 
-      id: 'Gabungkan beberapa file PDF menjadi satu dokumen dengan urutan bebas.', 
-      en: 'Combine multiple PDF files into one document with flexible ordering.' 
+      id: 'Gabungkan beberapa file PDF menjadi satu dokumen.', 
+      en: 'Combine multiple PDF files into one document.' 
     }, 
     icon: Combine, 
     category: 'Populer', 
@@ -52,8 +52,8 @@ const TOOLS = [
     id: 'compress-pdf', 
     title: { id: 'Kompres PDF', en: 'Compress PDF' }, 
     desc: { 
-      id: 'Perkecil ukuran file PDF tanpa mengurangi kualitas tampilan dokumen.', 
-      en: 'Reduce PDF file size without compromising document quality.' 
+      id: 'Perkecil ukuran file PDF tanpa mengurangi kualitas.', 
+      en: 'Reduce PDF file size without compromising quality.' 
     }, 
     icon: Minimize, 
     category: 'Populer', 
@@ -67,8 +67,8 @@ const TOOLS = [
     id: 'split-pdf', 
     title: { id: 'Pisah PDF', en: 'Split PDF' }, 
     desc: { 
-      id: 'Pisahkan PDF berdasarkan halaman atau ekstrak halaman tertentu.', 
-      en: 'Split PDF by pages or extract specific pages into separate files.' 
+      id: 'Pisahkan PDF berdasarkan halaman tertentu.', 
+      en: 'Split PDF by pages or extract specific pages.' 
     }, 
     icon: Scissors, 
     category: 'Populer', 
@@ -82,8 +82,8 @@ const TOOLS = [
     id: 'edit-pdf', 
     title: { id: 'Edit PDF', en: 'Edit PDF' }, 
     desc: { 
-      id: 'Edit dokumen PDF: tambah teks, gambar, bentuk, dan anotasi lainnya.', 
-      en: 'Edit PDF documents: add text, images, shapes, and annotations.' 
+      id: 'Edit dokumen PDF dengan teks, gambar, dan anotasi.', 
+      en: 'Edit PDF documents with text, images, and annotations.' 
     }, 
     icon: FilePenLine, 
     category: 'Populer', 
@@ -97,8 +97,8 @@ const TOOLS = [
     id: 'scan-pdf', 
     title: { id: 'Scan PDF', en: 'Scan PDF' }, 
     desc: { 
-      id: 'Scan dokumen fisik menggunakan kamera dan simpan sebagai PDF.', 
-      en: 'Scan physical documents using camera and save as PDF.' 
+      id: 'Scan dokumen fisik dan simpan sebagai PDF.', 
+      en: 'Scan physical documents and save as PDF.' 
     }, 
     icon: Camera, 
     category: 'Populer', 
@@ -114,8 +114,8 @@ const TOOLS = [
     id: 'pdf-to-jpg', 
     title: { id: 'PDF ke JPG', en: 'PDF to JPG' }, 
     desc: { 
-      id: 'Konversi halaman PDF menjadi gambar JPG dengan resolusi tinggi.', 
-      en: 'Convert PDF pages to high-resolution JPG images.' 
+      id: 'Konversi halaman PDF menjadi gambar JPG.', 
+      en: 'Convert PDF pages to JPG images.' 
     }, 
     icon: Image, 
     category: 'Konversi', 
@@ -129,8 +129,8 @@ const TOOLS = [
     id: 'pdf-to-png', 
     title: { id: 'PDF ke PNG', en: 'PDF to PNG' }, 
     desc: { 
-      id: 'Ubah halaman PDF menjadi gambar PNG dengan background transparan.', 
-      en: 'Convert PDF pages to PNG images with transparent background.' 
+      id: 'Ubah PDF menjadi gambar PNG.', 
+      en: 'Convert PDF to PNG images.' 
     }, 
     icon: FileImage, 
     category: 'Konversi', 
@@ -144,8 +144,8 @@ const TOOLS = [
     id: 'pdf-to-text', 
     title: { id: 'PDF ke Teks', en: 'PDF to Text' }, 
     desc: { 
-      id: 'Ekstrak teks dari dokumen PDF ke format teks yang bisa diedit.', 
-      en: 'Extract text from PDF documents to editable text format.' 
+      id: 'Ekstrak teks dari dokumen PDF.', 
+      en: 'Extract text from PDF documents.' 
     }, 
     icon: FileText, 
     category: 'Konversi', 
@@ -159,8 +159,8 @@ const TOOLS = [
     id: 'png-to-pdf', 
     title: { id: 'PNG ke PDF', en: 'PNG to PDF' }, 
     desc: { 
-      id: 'Konversi gambar PNG menjadi dokumen PDF dengan kualitas optimal.', 
-      en: 'Convert PNG images to PDF documents with optimal quality.' 
+      id: 'Konversi gambar PNG menjadi PDF.', 
+      en: 'Convert PNG images to PDF.' 
     }, 
     icon: FileImage, 
     category: 'Konversi', 
@@ -174,8 +174,8 @@ const TOOLS = [
     id: 'flatten-pdf', 
     title: { id: 'Ratakan PDF', en: 'Flatten PDF' }, 
     desc: { 
-      id: 'Kunci form dan elemen interaktif dalam dokumen PDF.', 
-      en: 'Lock forms and interactive elements in PDF documents.' 
+      id: 'Kunci form dan elemen interaktif PDF.', 
+      en: 'Lock forms and interactive elements in PDF.' 
     }, 
     icon: Layers, 
     category: 'Konversi', 
@@ -189,8 +189,8 @@ const TOOLS = [
     id: 'pdf-to-html', 
     title: { id: 'PDF ke HTML', en: 'PDF to HTML' }, 
     desc: { 
-      id: 'Konversi dokumen PDF menjadi halaman web HTML yang responsif.', 
-      en: 'Convert PDF documents to responsive HTML web pages.' 
+      id: 'Konversi PDF menjadi halaman web HTML.', 
+      en: 'Convert PDF to HTML web pages.' 
     }, 
     icon: FileCode, 
     category: 'Konversi', 
@@ -206,8 +206,8 @@ const TOOLS = [
     id: 'rotate-pdf', 
     title: { id: 'Putar PDF', en: 'Rotate PDF' }, 
     desc: { 
-      id: 'Putar halaman PDF untuk memperbaiki orientasi dokumen.', 
-      en: 'Rotate PDF pages to correct document orientation.' 
+      id: 'Putar halaman PDF untuk perbaiki orientasi.', 
+      en: 'Rotate PDF pages to correct orientation.' 
     }, 
     icon: RefreshCcw, 
     category: 'Edit', 
@@ -221,8 +221,8 @@ const TOOLS = [
     id: 'delete-pages', 
     title: { id: 'Hapus Halaman', en: 'Delete Pages' }, 
     desc: { 
-      id: 'Hapus halaman tertentu dari dokumen PDF dengan mudah.', 
-      en: 'Delete specific pages from PDF documents easily.' 
+      id: 'Hapus halaman tertentu dari PDF.', 
+      en: 'Delete specific pages from PDF.' 
     }, 
     icon: Trash2, 
     category: 'Edit', 
@@ -236,8 +236,8 @@ const TOOLS = [
     id: 'rearrange-pdf', 
     title: { id: 'Urutkan Halaman', en: 'Rearrange PDF' }, 
     desc: { 
-      id: 'Atur ulang urutan halaman dalam dokumen PDF sesuai kebutuhan.', 
-      en: 'Rearrange page order in PDF documents as needed.' 
+      id: 'Atur ulang urutan halaman PDF.', 
+      en: 'Rearrange page order in PDF.' 
     }, 
     icon: Layout, 
     category: 'Edit', 
@@ -251,8 +251,8 @@ const TOOLS = [
     id: 'extract-pages', 
     title: { id: 'Ambil Halaman', en: 'Extract Pages' }, 
     desc: { 
-      id: 'Ekstrak halaman tertentu dari PDF menjadi file terpisah.', 
-      en: 'Extract specific pages from PDF into separate files.' 
+      id: 'Ekstrak halaman tertentu dari PDF.', 
+      en: 'Extract specific pages from PDF.' 
     }, 
     icon: FileUp, 
     category: 'Edit', 
@@ -266,8 +266,8 @@ const TOOLS = [
     id: 'add-page-numbers', 
     title: { id: 'Nomor Halaman', en: 'Page Numbers' }, 
     desc: { 
-      id: 'Tambahkan nomor halaman otomatis ke dokumen PDF.', 
-      en: 'Add automatic page numbers to PDF documents.' 
+      id: 'Tambahkan nomor halaman ke PDF.', 
+      en: 'Add page numbers to PDF.' 
     }, 
     icon: BookOpen, 
     category: 'Edit', 
@@ -281,8 +281,8 @@ const TOOLS = [
     id: 'resize-pdf', 
     title: { id: 'Ubah Ukuran PDF', en: 'Resize PDF' }, 
     desc: { 
-      id: 'Ubah ukuran kertas PDF (A4, Letter, Legal, dll).', 
-      en: 'Change PDF paper size (A4, Letter, Legal, etc).' 
+      id: 'Ubah ukuran kertas PDF.', 
+      en: 'Change PDF paper size.' 
     }, 
     icon: Maximize, 
     category: 'Edit', 
@@ -296,8 +296,8 @@ const TOOLS = [
     id: 'add-image-pdf', 
     title: { id: 'Tambah Gambar', en: 'Add Image to PDF' }, 
     desc: { 
-      id: 'Sisipkan gambar atau logo ke dalam dokumen PDF.', 
-      en: 'Insert images or logos into PDF documents.' 
+      id: 'Sisipkan gambar ke dalam PDF.', 
+      en: 'Insert images into PDF.' 
     }, 
     icon: FileImage, 
     category: 'Edit', 
@@ -311,8 +311,8 @@ const TOOLS = [
     id: 'fill-form', 
     title: { id: 'Isi Formulir', en: 'Fill PDF Forms' }, 
     desc: { 
-      id: 'Isi formulir PDF digital secara online dengan mudah.', 
-      en: 'Fill digital PDF forms online easily.' 
+      id: 'Isi formulir PDF secara online.', 
+      en: 'Fill PDF forms online.' 
     }, 
     icon: PenTool, 
     category: 'Edit', 
@@ -328,8 +328,8 @@ const TOOLS = [
     id: 'protect-pdf', 
     title: { id: 'Kunci PDF', en: 'Protect PDF' }, 
     desc: { 
-      id: 'Lindungi PDF dengan password dan enkripsi keamanan.', 
-      en: 'Protect PDF with password and security encryption.' 
+      id: 'Lindungi PDF dengan password.', 
+      en: 'Protect PDF with password.' 
     }, 
     icon: Lock, 
     category: 'Keamanan', 
@@ -343,8 +343,8 @@ const TOOLS = [
     id: 'unlock-pdf', 
     title: { id: 'Buka PDF', en: 'Unlock PDF' }, 
     desc: { 
-      id: 'Hapus proteksi password dari dokumen PDF yang terkunci.', 
-      en: 'Remove password protection from locked PDF documents.' 
+      id: 'Hapus proteksi password PDF.', 
+      en: 'Remove PDF password protection.' 
     }, 
     icon: Unlock, 
     category: 'Keamanan', 
@@ -358,8 +358,8 @@ const TOOLS = [
     id: 'watermark-pdf', 
     title: { id: 'Watermark PDF', en: 'Watermark PDF' }, 
     desc: { 
-      id: 'Tambahkan watermark teks atau gambar ke dokumen PDF.', 
-      en: 'Add text or image watermark to PDF documents.' 
+      id: 'Tambahkan watermark ke PDF.', 
+      en: 'Add watermark to PDF.' 
     }, 
     icon: BadgeCheck, 
     category: 'Keamanan', 
@@ -373,8 +373,8 @@ const TOOLS = [
     id: 'esign-pdf', 
     title: { id: 'Tanda Tangan PDF', en: 'eSign PDF' }, 
     desc: { 
-      id: 'Tambahkan tanda tangan digital ke dokumen PDF secara online.', 
-      en: 'Add digital signature to PDF documents online.' 
+      id: 'Tambahkan tanda tangan digital ke PDF.', 
+      en: 'Add digital signature to PDF.' 
     }, 
     icon: FileSignature, 
     category: 'Keamanan', 
@@ -399,18 +399,18 @@ const UI_TEXT = {
   brand: { id: 'PDFMagic', en: 'PDFMagic' },
   hero_title: { id: 'Alat PDF Online Terlengkap & Gratis', en: 'Complete & Free Online PDF Tools' },
   hero_desc: { 
-    id: 'Kelola dokumen PDF dengan mudah menggunakan alat profesional kami. Konversi, edit, kompres, dan lindungi file PDF tanpa perlu instalasi software.', 
-    en: 'Manage PDF documents easily with our professional tools. Convert, edit, compress, and protect PDF files without installing any software.' 
+    id: 'Kelola dokumen PDF dengan mudah menggunakan alat profesional kami. Konversi, edit, kompres, dan lindungi file PDF tanpa instalasi.', 
+    en: 'Manage PDF documents easily with our professional tools. Convert, edit, compress, and protect PDF files without installation.' 
   },
-  search_placeholder: { id: 'Cari alat PDF (contoh: gabung, edit, kompres)...', en: 'Search PDF tools (e.g. merge, edit, compress)...' },
+  search_placeholder: { id: 'Cari alat PDF...', en: 'Search PDF tools...' },
   no_result: { id: 'Alat tidak ditemukan', en: 'No tools found' },
   most_used: { id: 'Akses Cepat', en: 'Quick Access' },
   search_result_hero: { id: 'Hasil Pencarian', en: 'Search Results' },
   sponsored: { id: 'Iklan', en: 'Ad' },
   promo_title: { id: 'Layanan Terkait', en: 'Related Services' },
   footer_desc: { 
-    id: 'PDFMagic menyediakan solusi pengelolaan dokumen digital yang aman dan efisien untuk kebutuhan pribadi maupun profesional.', 
-    en: 'PDFMagic provides secure and efficient digital document solutions for personal and professional needs.' 
+    id: 'PDFMagic menyediakan solusi pengelolaan dokumen digital yang aman dan efisien.', 
+    en: 'PDFMagic provides secure and efficient digital document solutions.' 
   },
 };
 
@@ -419,8 +419,8 @@ const OTHER_WEBSITES = [
     name: 'LatihanOnline.com',
     url: 'https://www.latihanonline.com',
     desc: { 
-      id: 'Platform pembelajaran online dengan bank soal lengkap untuk semua jenjang pendidikan.', 
-      en: 'Online learning platform with complete question bank for all education levels.' 
+      id: 'Platform pembelajaran online dengan bank soal lengkap.', 
+      en: 'Online learning platform with complete question bank.' 
     },
     color: 'text-orange-600', 
     bg_hover: 'hover:bg-orange-50',
@@ -432,8 +432,8 @@ const OTHER_WEBSITES = [
     name: 'LayananDokumen.com',
     url: 'https://www.layanandokumen.com',
     desc: { 
-      id: 'Generator dokumen resmi otomatis: surat, invoice, kontrak, dan formulir profesional.', 
-      en: 'Automatic official document generator: letters, invoices, contracts, and professional forms.' 
+      id: 'Generator dokumen resmi otomatis.', 
+      en: 'Automatic official document generator.' 
     },
     color: 'text-blue-600', 
     bg_hover: 'hover:bg-blue-50',
@@ -533,7 +533,7 @@ export default function Home() {
               {tool.category}
             </div>
 
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between mb-3">
                 <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${tool.bg} ${tool.color} group-hover:scale-105 transition-transform duration-200`}>
                   <tool.icon className="w-5 h-5" strokeWidth={2} />
                 </div>
@@ -544,7 +544,8 @@ export default function Home() {
               <h3 className="font-bold text-base text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
                 {tool.title[lang]}
               </h3>
-              <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">
+              {/* DESKRIPSI DIPERKECIL */}
+              <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
                 {tool.desc[lang]}
               </p>
             </div>
@@ -609,7 +610,7 @@ export default function Home() {
         )}
       </header>
 
-      {/* HERO SECTION - FONT SIZE DIPERBESAR */}
+      {/* HERO SECTION */}
       <section className="pt-24 pb-16 border-b border-slate-200 bg-white">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
@@ -621,12 +622,10 @@ export default function Home() {
               </div>
             ) : (
               <>
-                {/* JUDUL DIPERBESAR */}
                 <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
                   {UI_TEXT.hero_title[lang]}
                 </h1>
                 
-                {/* DESKRIPSI DIPERBESAR */}
                 <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
                   {UI_TEXT.hero_desc[lang]}
                 </p>
@@ -688,7 +687,7 @@ export default function Home() {
                   )}
                 </h3>
                 <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                  {quickAccessTools.length} alat
+                  {quickAccessTools.length}
                 </span>
               </div>
               
@@ -747,7 +746,7 @@ export default function Home() {
         </aside>
 
         {/* CONTENT AREA */}
-        <div className="flex-1 flex flex-col gap-10 min-w-0">
+        <div className="flex-1 flex flex-col gap-8 min-w-0">
           {/* Mobile Ad */}
           <div className="md:hidden flex justify-center py-2">
             <div className="bg-white border border-slate-200 rounded p-1">
@@ -755,15 +754,15 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Grid Title */}
-          <div className="text-center mb-4">
+          {/* HILANGKAN TITLE DI SINI */}
+          {/* <div className="text-center mb-4">
             <h2 className="text-2xl font-bold text-slate-800 mb-2">
               {search ? 'Hasil Pencarian' : 'Semua Alat PDF'}
             </h2>
             <p className="text-slate-500">
               {filteredTools.length} alat tersedia • {search ? `"${search}"` : 'Pilih kategori'}
             </p>
-          </div>
+          </div> */}
 
           {/* Main Grid */}
           <main className="min-h-[400px]">
@@ -779,7 +778,7 @@ export default function Home() {
               <div className="text-center py-20 bg-white border border-slate-200 rounded-lg">
                 <SearchX size={48} className="mx-auto mb-4 text-slate-300"/>
                 <p className="text-slate-400 text-lg font-medium mb-2">{UI_TEXT.no_result[lang]}</p>
-                <p className="text-slate-300">Coba kata kunci lain atau pilih kategori berbeda</p>
+                <p className="text-slate-300">Coba kata kunci lain</p>
               </div>
             )}
           </main>
@@ -800,31 +799,32 @@ export default function Home() {
         </aside>
       </div>
 
-      {/* CROSS PROMOTION */}
+      {/* CROSS PROMOTION - DESKRIPSI DIPERKECIL */}
       <section className="py-12 px-6 bg-slate-50 border-t border-slate-200">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <h3 className="text-2xl font-bold text-slate-800 mb-3">{UI_TEXT.promo_title[lang]}</h3>
-            <div className="h-1 w-20 bg-blue-500 mx-auto rounded-full"></div>
+          <div className="text-center mb-8">
+            <h3 className="text-xl font-bold text-slate-800 mb-2">{UI_TEXT.promo_title[lang]}</h3>
+            <div className="h-1 w-16 bg-blue-500 mx-auto rounded-full"></div>
           </div>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-4">
             {OTHER_WEBSITES.map((site, idx) => (
               <a 
                 href={site.url} 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 key={idx} 
-                className="group flex items-start gap-5 p-6 bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all"
+                className="group flex items-start gap-4 p-5 bg-white rounded-lg border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all"
               >
-                <div className={`p-3 rounded-lg ${site.bg_icon} shrink-0`}>
-                  <site.icon size={24} strokeWidth={2} className={site.color} />
+                <div className={`p-2.5 rounded ${site.bg_icon} shrink-0`}>
+                  <site.icon size={20} strokeWidth={2} className={site.color} />
                 </div>
                 <div>
-                  <h4 className={`text-lg font-semibold ${site.color} mb-2 flex items-center gap-2`}>
+                  <h4 className={`text-base font-semibold ${site.color} mb-1 flex items-center gap-1.5`}>
                     {site.name}
-                    <ExternalLink size={14} className="opacity-60 group-hover:opacity-100"/>
+                    <ExternalLink size={12} className="opacity-60 group-hover:opacity-100"/>
                   </h4>
-                  <p className="text-slate-600 leading-relaxed">{site.desc[lang]}</p>
+                  {/* DESKRIPSI DIPERKECIL */}
+                  <p className="text-sm text-slate-600">{site.desc[lang]}</p>
                 </div>
               </a>
             ))}
@@ -832,44 +832,45 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-white border-t border-slate-200 py-10">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8">
+      {/* FOOTER - TEKS DIPERKECIL */}
+      <footer className="bg-white border-t border-slate-200 py-8">
+        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
-            <div className="font-bold text-xl text-slate-900 mb-4 flex items-center gap-3">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-2 rounded-lg">
-                <FileText size={20}/>
+            <div className="font-bold text-lg text-slate-900 mb-3 flex items-center gap-2">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-1.5 rounded">
+                <FileText size={18}/>
               </div>
               {UI_TEXT.brand[lang]}
             </div>
-            <p className="text-slate-600 leading-relaxed max-w-lg mb-4">
+            {/* DESKRIPSI FOOTER DIPERKECIL & LEBIH SINGKAT */}
+            <p className="text-sm text-slate-600 max-w-md mb-3">
               {UI_TEXT.footer_desc[lang]}
             </p>
             <div className="flex gap-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <CheckCircle size={16} className="text-emerald-500"/> Aman & Privat
+              <div className="flex items-center gap-1 text-xs text-slate-500">
+                <CheckCircle size={12} className="text-emerald-500"/> Aman
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <CheckCircle size={16} className="text-emerald-500"/> 100% Gratis
+              <div className="flex items-center gap-1 text-xs text-slate-500">
+                <CheckCircle size={12} className="text-emerald-500"/> Gratis
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <CheckCircle size={16} className="text-emerald-500"/> Tanpa Instalasi
+              <div className="flex items-center gap-1 text-xs text-slate-500">
+                <CheckCircle size={12} className="text-emerald-500"/> Online
               </div>
             </div>
           </div>
           
           <div>
-            <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">Tautan</h4>
-            <ul className="space-y-3">
-              <li><Link href="/" className="text-slate-600 hover:text-blue-600 transition-colors">Beranda</Link></li>
-              <li><a href="https://www.latihanonline.com" target="_blank" className="text-slate-600 hover:text-orange-600 transition-colors">LatihanOnline</a></li>
-              <li><a href="https://www.layanandokumen.com" target="_blank" className="text-slate-600 hover:text-blue-600 transition-colors">LayananDokumen</a></li>
+            <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Tautan</h4>
+            <ul className="space-y-2">
+              <li><Link href="/" className="text-sm text-slate-600 hover:text-blue-600 transition-colors">Beranda</Link></li>
+              <li><a href="https://www.latihanonline.com" target="_blank" className="text-sm text-slate-600 hover:text-orange-600 transition-colors">LatihanOnline</a></li>
+              <li><a href="https://www.layanandokumen.com" target="_blank" className="text-sm text-slate-600 hover:text-blue-600 transition-colors">LayananDokumen</a></li>
             </ul>
           </div>
         </div>
         
-        <div className="max-w-7xl mx-auto px-6 mt-10 pt-6 border-t border-slate-200 text-center">
-          <div className="text-sm text-slate-400">
+        <div className="max-w-7xl mx-auto px-6 mt-8 pt-6 border-t border-slate-200 text-center">
+          <div className="text-xs text-slate-400">
             © 2024 {UI_TEXT.brand[lang]}. All rights reserved.
           </div>
         </div>
