@@ -14,19 +14,19 @@ import AdsterraBanner from '@/components/AdsterraBanner';
 // --- TYPE ---
 type Language = 'id' | 'en';
 
-// --- DATA TOOLS LENGKAP ---
+// --- DATA TOOLS LENGKAP 24 ---
 const TOOLS = [
   // POPULER (6 tools)
   { 
     id: 'jpg-to-pdf', 
     title: { id: 'JPG ke PDF', en: 'JPG to PDF' }, 
-    desc: { id: 'Konversi gambar JPG menjadi PDF.', en: 'Convert JPG images to PDF.' }, 
+    desc: { id: 'Ubah foto menjadi PDF.', en: 'Convert photos to PDF.' }, 
     icon: Image, category: 'Populer', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', border_hover: 'hover:border-orange-300', badge: 'from-orange-500 to-amber-400'
   },
   { 
     id: 'merge-pdf', 
     title: { id: 'Gabung PDF', en: 'Merge PDF' }, 
-    desc: { id: 'Satukan banyak PDF jadi satu.', en: 'Combine multiple PDFs into one.' }, 
+    desc: { id: 'Satukan banyak file PDF.', en: 'Combine multiple PDFs.' }, 
     icon: Combine, category: 'Populer', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', border_hover: 'hover:border-purple-300', badge: 'from-purple-500 to-pink-400'
   },
   { 
@@ -38,45 +38,45 @@ const TOOLS = [
   { 
     id: 'split-pdf', 
     title: { id: 'Pisah PDF', en: 'Split PDF' }, 
-    desc: { id: 'Ambil halaman tertentu.', en: 'Extract specific pages.' }, 
+    desc: { id: 'Ambil halaman tertentu.', en: 'Separate specific pages.' }, 
     icon: Scissors, category: 'Populer', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', border_hover: 'hover:border-rose-300', badge: 'from-rose-500 to-pink-400'
   },
   { 
     id: 'edit-pdf', 
     title: { id: 'Edit PDF', en: 'Edit PDF' }, 
-    desc: { id: 'Tambah teks & anotasi.', en: 'Add text & annotations.' }, 
+    desc: { id: 'Tambahkan teks manual.', en: 'Add manual text.' }, 
     icon: FilePenLine, category: 'Populer', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', border_hover: 'hover:border-indigo-300', badge: 'from-indigo-500 to-blue-400'
   },
   { 
     id: 'scan-pdf', 
     title: { id: 'Scan PDF', en: 'Scan PDF' }, 
-    desc: { id: 'Scan dokumen via kamera.', en: 'Scan docs via camera.' }, 
+    desc: { id: 'Scan dokumen pakai kamera.', en: 'Scan docs via camera.' }, 
     icon: Camera, category: 'Populer', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-500 to-cyan-400'
   },
 
   // KONVERSI
-  { id: 'pdf-to-jpg', title: { id: 'PDF ke JPG', en: 'PDF to JPG' }, desc: { id: 'PDF jadi gambar JPG.', en: 'PDF to JPG images.' }, icon: Image, category: 'Konversi', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', border_hover: 'hover:border-amber-300', badge: 'from-amber-500 to-yellow-400' },
-  { id: 'pdf-to-png', title: { id: 'PDF ke PNG', en: 'PDF to PNG' }, desc: { id: 'PDF jadi gambar PNG.', en: 'PDF to PNG images.' }, icon: FileImage, category: 'Konversi', color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100', border_hover: 'hover:border-teal-300', badge: 'from-teal-500 to-emerald-400' },
-  { id: 'pdf-to-text', title: { id: 'PDF ke Teks', en: 'PDF to Text' }, desc: { id: 'Ambil teks dari PDF.', en: 'Extract text from PDF.' }, icon: FileText, category: 'Konversi', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
-  { id: 'png-to-pdf', title: { id: 'PNG ke PDF', en: 'PNG to PDF' }, desc: { id: 'PNG jadi PDF.', en: 'PNG to PDF.' }, icon: FileImage, category: 'Konversi', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', border_hover: 'hover:border-cyan-300', badge: 'from-cyan-500 to-sky-400' },
-  { id: 'flatten-pdf', title: { id: 'Ratakan PDF', en: 'Flatten PDF' }, desc: { id: 'Kunci elemen PDF.', en: 'Lock PDF elements.' }, icon: Layers, category: 'Konversi', color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-100', border_hover: 'hover:border-gray-300', badge: 'from-gray-600 to-slate-500' },
-  { id: 'pdf-to-html', title: { id: 'PDF ke HTML', en: 'PDF to HTML' }, desc: { id: 'PDF jadi web.', en: 'PDF to web.' }, icon: FileCode, category: 'Konversi', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100', border_hover: 'hover:border-pink-300', badge: 'from-pink-500 to-rose-400' },
+  { id: 'pdf-to-jpg', title: { id: 'PDF ke JPG', en: 'PDF to JPG' }, desc: { id: 'Simpan halaman jadi gambar.', en: 'Save pages as images.' }, icon: Image, category: 'Konversi', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', border_hover: 'hover:border-amber-300', badge: 'from-amber-500 to-yellow-400' },
+  { id: 'pdf-to-png', title: { id: 'PDF ke PNG', en: 'PDF to PNG' }, desc: { id: 'Simpan PDF jadi PNG.', en: 'Convert PDF to PNG.' }, icon: FileImage, category: 'Konversi', color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100', border_hover: 'hover:border-teal-300', badge: 'from-teal-500 to-emerald-400' },
+  { id: 'pdf-to-text', title: { id: 'PDF ke Text', en: 'PDF to Text' }, desc: { id: 'Salin tulisan dari PDF.', en: 'Extract text from PDF.' }, icon: FileText, category: 'Konversi', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
+  { id: 'png-to-pdf', title: { id: 'PNG ke PDF', en: 'PNG to PDF' }, desc: { id: 'Gambar PNG jadi PDF.', en: 'Turn PNG into PDF.' }, icon: FileImage, category: 'Konversi', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', border_hover: 'hover:border-cyan-300', badge: 'from-cyan-500 to-sky-400' },
+  { id: 'flatten-pdf', title: { id: 'Ratakan PDF', en: 'Flatten PDF' }, desc: { id: 'Kunci elemen interaktif.', en: 'Lock interactive elements.' }, icon: Layers, category: 'Konversi', color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-100', border_hover: 'hover:border-gray-300', badge: 'from-gray-600 to-slate-500' },
+  { id: 'pdf-to-html', title: { id: 'PDF ke HTML', en: 'PDF to HTML' }, desc: { id: 'PDF jadi halaman web.', en: 'PDF to web page.' }, icon: FileCode, category: 'Konversi', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100', border_hover: 'hover:border-pink-300', badge: 'from-pink-500 to-rose-400' },
 
   // EDIT
-  { id: 'rotate-pdf', title: { id: 'Putar PDF', en: 'Rotate PDF' }, desc: { id: 'Putar halaman.', en: 'Rotate pages.' }, icon: RefreshCcw, category: 'Edit', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100', border_hover: 'hover:border-violet-300', badge: 'from-violet-500 to-purple-400' },
+  { id: 'rotate-pdf', title: { id: 'Putar PDF', en: 'Rotate PDF' }, desc: { id: 'Perbaiki orientasi halaman.', en: 'Fix page orientation.' }, icon: RefreshCcw, category: 'Edit', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100', border_hover: 'hover:border-violet-300', badge: 'from-violet-500 to-purple-400' },
   { id: 'delete-pages', title: { id: 'Hapus Halaman', en: 'Delete Pages' }, desc: { id: 'Buang halaman.', en: 'Remove pages.' }, icon: Trash2, category: 'Edit', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', border_hover: 'hover:border-rose-300', badge: 'from-rose-500 to-red-400' },
-  { id: 'rearrange-pdf', title: { id: 'Urutkan', en: 'Rearrange' }, desc: { id: 'Geser urutan.', en: 'Reorder pages.' }, icon: Layout, category: 'Edit', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-400 to-sky-300' },
-  { id: 'extract-pages', title: { id: 'Ambil Halaman', en: 'Extract' }, desc: { id: 'Simpan pilihan.', en: 'Save selected.' }, icon: FileUp, category: 'Edit', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', border_hover: 'hover:border-emerald-300', badge: 'from-emerald-500 to-green-400' },
-  { id: 'add-page-numbers', title: { id: 'Nomor Hal', en: 'Page No' }, desc: { id: 'Tambah nomor.', en: 'Add numbers.' }, icon: BookOpen, category: 'Edit', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
-  { id: 'resize-pdf', title: { id: 'Ubah Ukuran', en: 'Resize' }, desc: { id: 'Ganti ukuran kertas.', en: 'Change size.' }, icon: Maximize, category: 'Edit', color: 'text-fuchsia-600', bg: 'bg-fuchsia-50', border: 'border-fuchsia-100', border_hover: 'hover:border-fuchsia-300', badge: 'from-fuchsia-500 to-pink-400' },
-  { id: 'add-image-pdf', title: { id: 'Tambah Gambar', en: 'Add Image' }, desc: { id: 'Sisipkan foto.', en: 'Insert photo.' }, icon: FileImage, category: 'Edit', color: 'text-lime-600', bg: 'bg-lime-50', border: 'border-lime-100', border_hover: 'hover:border-lime-300', badge: 'from-lime-500 to-green-400' },
-  { id: 'fill-form', title: { id: 'Isi Formulir', en: 'Fill Forms' }, desc: { id: 'Isi form PDF.', en: 'Fill forms.' }, icon: PenTool, category: 'Edit', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', border_hover: 'hover:border-indigo-300', badge: 'from-indigo-500 to-blue-400' },
+  { id: 'rearrange-pdf', title: { id: 'Urutkan Halaman', en: 'Rearrange PDF' }, desc: { id: 'Geser urutan halaman.', en: 'Reorder pages.' }, icon: Layout, category: 'Edit', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-400 to-sky-300' },
+  { id: 'extract-pages', title: { id: 'Ambil Halaman', en: 'Extract Pages' }, desc: { id: 'Simpan halaman pilihan.', en: 'Save selected pages.' }, icon: FileUp, category: 'Edit', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', border_hover: 'hover:border-emerald-300', badge: 'from-emerald-500 to-green-400' },
+  { id: 'add-page-numbers', title: { id: 'Nomor Halaman', en: 'Page Numbers' }, desc: { id: 'Sisipkan nomor otomatis.', en: 'Insert page numbers.' }, icon: BookOpen, category: 'Edit', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
+  { id: 'resize-pdf', title: { id: 'Ubah Ukuran PDF', en: 'Resize PDF' }, desc: { id: 'Ganti ukuran kertas (A4).', en: 'Change page size (A4).' }, icon: Maximize, category: 'Edit', color: 'text-fuchsia-600', bg: 'bg-fuchsia-50', border: 'border-fuchsia-100', border_hover: 'hover:border-fuchsia-300', badge: 'from-fuchsia-500 to-pink-400' },
+  { id: 'add-image-pdf', title: { id: 'Tambah Gambar', en: 'Add Image to PDF' }, desc: { id: 'Sisipkan logo/foto.', en: 'Insert logo/photo.' }, icon: FileImage, category: 'Edit', color: 'text-lime-600', bg: 'bg-lime-50', border: 'border-lime-100', border_hover: 'hover:border-lime-300', badge: 'from-lime-500 to-green-400' },
+  { id: 'fill-form', title: { id: 'Isi Formulir', en: 'Fill PDF Forms' }, desc: { id: 'Isi kolom formulir PDF.', en: 'Fill PDF form fields.' }, icon: PenTool, category: 'Edit', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', border_hover: 'hover:border-indigo-300', badge: 'from-indigo-500 to-blue-400' },
 
   // KEAMANAN
   { id: 'protect-pdf', title: { id: 'Kunci PDF', en: 'Protect PDF' }, desc: { id: 'Pasang password.', en: 'Set password.' }, icon: Lock, category: 'Keamanan', color: 'text-slate-800', bg: 'bg-slate-100', border: 'border-slate-200', border_hover: 'hover:border-slate-400', badge: 'from-slate-700 to-gray-600' },
   { id: 'unlock-pdf', title: { id: 'Buka PDF', en: 'Unlock PDF' }, desc: { id: 'Hapus password.', en: 'Remove password.' }, icon: Unlock, category: 'Keamanan', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100', border_hover: 'hover:border-pink-300', badge: 'from-pink-500 to-rose-400' },
-  { id: 'watermark-pdf', title: { id: 'Watermark', en: 'Watermark' }, desc: { id: 'Tempel cap.', en: 'Add stamp.' }, icon: BadgeCheck, category: 'Keamanan', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-100', border_hover: 'hover:border-red-300', badge: 'from-red-600 to-orange-500' },
-  { id: 'esign-pdf', title: { id: 'Tanda Tangan', en: 'eSign' }, desc: { id: 'Tanda tangan digital.', en: 'Digital sign.' }, icon: FileSignature, category: 'Keamanan', color: 'text-blue-800', bg: 'bg-blue-50', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-600 to-cyan-500' }
+  { id: 'watermark-pdf', title: { id: 'Watermark PDF', en: 'Watermark PDF' }, desc: { id: 'Tempel cap transparan.', en: 'Add transparent stamp.' }, icon: BadgeCheck, category: 'Keamanan', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-100', border_hover: 'hover:border-red-300', badge: 'from-red-600 to-orange-500' },
+  { id: 'esign-pdf', title: { id: 'Tanda Tangan PDF', en: 'eSign PDF' }, desc: { id: 'Tanda tangan digital.', en: 'Digital signature.' }, icon: FileSignature, category: 'Keamanan', color: 'text-blue-800', bg: 'bg-blue-100', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-600 to-cyan-500' }
 ];
 
 const TAB_CATEGORIES = [
@@ -100,8 +100,9 @@ const UI_TEXT = {
   most_used: { id: 'Akses Cepat', en: 'Quick Access' },
   search_result_hero: { id: 'Hasil Pencarian', en: 'Search Results' },
   sponsored: { id: 'Iklan', en: 'Ad' },
-  promo_title: { id: 'Layanan Terkait', en: 'Related Services' },
-  footer_desc: { id: 'Solusi dokumen digital aman & efisien.', en: 'Secure & efficient digital document solutions.' },
+  change_lang: { id: 'Bahasa', en: 'Language' },
+  promo_title: { id: 'Layanan Kami Lainnya', en: 'Our Other Services' },
+  footer_desc: { id: 'LayananPDF menyediakan solusi pengelolaan dokumen digital yang aman dan efisien.', en: 'LayananPDF provides secure and efficient digital document solutions.' },
   footer_links: { id: 'Tautan', en: 'Links' },
   footer_legal: { id: 'Legal', en: 'Legal' },
   privacy: { id: 'Privasi', en: 'Privacy' },
@@ -114,7 +115,7 @@ const OTHER_WEBSITES = [
   {
     name: 'LatihanOnline.com',
     url: 'https://www.latihanonline.com',
-    desc: { id: 'Bank Soal & Ujian Sekolah Gratis.', en: 'Free School Exam & Question Bank.' },
+    desc: { id: 'Bank Soal & Ujian Sekolah Gratis (SD-SMK).', en: 'Free School Exam & Question Bank.' },
     color: 'text-orange-600', bg_hover: 'hover:bg-orange-50', border_hover: 'hover:border-orange-200', bg_icon: 'bg-orange-100', icon: BookOpen
   },
   {
@@ -125,7 +126,7 @@ const OTHER_WEBSITES = [
   }
 ];
 
-// SKELETON
+// Skeleton Component
 const ToolCardSkeleton = () => (
   <div className="h-[180px] p-5 rounded-lg bg-white border border-slate-200 flex flex-col justify-between relative animate-pulse">
     <div>
@@ -159,7 +160,6 @@ export default function Home() {
     localStorage.setItem('user-lang', newLang);
   };
 
-  // Safe Get Tool
   const getTool = (id: string) => TOOLS.find(t => t.id === id);
   const jpgTool = getTool('jpg-to-pdf');
   const mergeTool = getTool('merge-pdf');
@@ -180,7 +180,7 @@ export default function Home() {
 
   const quickAccessTools = search 
     ? filteredTools.slice(0, 6) 
-    : [jpgTool, mergeTool, compressTool, splitTool].filter(Boolean);
+    : [jpgTool, mergeTool, compressTool, splitTool].filter(t => t);
 
   const renderGridItems = () => {
     const items: React.ReactNode[] = [];
@@ -190,7 +190,7 @@ export default function Home() {
     while (toolIndex < tools.length) {
       const currentSlot = items.length; 
       
-      // IKLAN: Slot 4, 10, 16, 22
+      // IKLAN
       if (activeTab === 'All' && !search) {
          if (currentSlot === 4 || currentSlot === 10 || currentSlot === 16 || currentSlot === 22) {
             items.push(
@@ -235,7 +235,7 @@ export default function Home() {
                         <h3 className="font-bold text-base text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
                             {tool.title[lang]}
                         </h3>
-                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
                             {tool.desc[lang]}
                         </p>
                     </div>
@@ -249,6 +249,7 @@ export default function Home() {
     return items;
   };
 
+  // --- BACKGROUND KOTAK-KOTAK KECIL ---
   const backgroundPattern = {
     backgroundImage: `linear-gradient(to right, #f1f5f9 1px, transparent 1px), linear-gradient(to bottom, #f1f5f9 1px, transparent 1px)`,
     backgroundSize: '16px 16px', // Ukuran kotak kecil 16px
@@ -257,7 +258,7 @@ export default function Home() {
   return (
     <div className="min-h-screen font-sans text-slate-800 bg-white flex flex-col overflow-x-hidden" style={backgroundPattern}>
       
-      {/* FLOATING NAVBAR */}
+      {/* FLOATING NAVBAR (MELAYANG) */}
       <header className="fixed top-4 left-0 right-0 z-50 mx-auto max-w-7xl px-4 md:px-6">
         <div className="bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl h-16 shadow-sm flex items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2">
@@ -269,6 +270,7 @@ export default function Home() {
             </span>
           </Link>
 
+          {/* Links Cleaned Up */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
             <button onClick={toggleLang} className="flex items-center gap-1 hover:text-blue-600 font-bold px-3 py-1.5 rounded bg-slate-50 border border-slate-200 text-xs uppercase tracking-wide transition-colors">
                <Globe size={12} /> {lang}
@@ -300,6 +302,7 @@ export default function Home() {
                 <div className="space-y-4 animate-pulse">
                     <div className="h-10 bg-slate-200 rounded-lg w-3/4 mx-auto lg:mx-0"></div>
                     <div className="h-4 bg-slate-200 rounded w-full mx-auto lg:mx-0"></div>
+                    <div className="h-4 bg-slate-200 rounded w-2/3 mx-auto lg:mx-0"></div>
                     <div className="h-12 bg-slate-200 rounded-xl w-full max-w-lg mx-auto lg:mx-0 mt-6"></div>
                 </div>
             ) : (
@@ -471,6 +474,7 @@ export default function Home() {
                </div>
                <p className="text-slate-500 text-sm leading-relaxed max-w-sm font-medium">{UI_TEXT.footer_desc[lang]}</p>
            </div>
+           
            <div>
                <h4 className="font-bold text-slate-900 mb-4 text-xs uppercase tracking-widest">{UI_TEXT.footer_links[lang]}</h4>
                <ul className="space-y-2.5 text-sm text-slate-500 font-medium">
@@ -478,6 +482,7 @@ export default function Home() {
                    <li><a href="https://www.latihanonline.com" target="_blank" className="hover:text-blue-600 transition-colors">LatihanOnline</a></li>
                </ul>
            </div>
+
            <div>
                <h4 className="font-bold text-slate-900 mb-4 text-xs uppercase tracking-widest">{UI_TEXT.footer_legal[lang]}</h4>
                <ul className="space-y-2.5 text-sm text-slate-500 font-medium">
