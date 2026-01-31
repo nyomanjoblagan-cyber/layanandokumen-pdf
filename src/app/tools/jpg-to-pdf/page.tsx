@@ -2,10 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
+// HAPUS IMPORT pdfjs-dist KARENA TIDAK DIPAKAI DI SINI DAN BIKIN ERROR
 import { 
   Image as ImageIcon, FileText, CheckCircle2, Download, Globe, 
   X, ArrowLeft, Loader2, Settings2, Plus, Trash2, ImagePlus, 
-  GripVertical, BarChart3, Maximize2, Minimize2
+  GripVertical, BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -123,18 +124,18 @@ export default function JpgToPdfPage() {
   // --- 4. FUNGSI UNTUK LIVE PREVIEW ORIENTATION ---
   const getPreviewStyle = (imgWidth: number, imgHeight: number) => {
     // A4 ratio: 1:1.414 (portrait) atau 1.414:1 (landscape)
-    const A4_RATIO = 1.414; // height/width ratio for A4 portrait
+    const A4_RATIO = 1.414; 
     
     let containerWidth, containerHeight;
     
     if (orientation === 'portrait') {
       // Container portrait: tinggi > lebar
       containerWidth = 100; // relative width
-      containerHeight = containerWidth * A4_RATIO; // 141.4% dari width
+      containerHeight = containerWidth * A4_RATIO; 
     } else {
       // Container landscape: lebar > tinggi  
       containerHeight = 100; // relative height
-      containerWidth = containerHeight * A4_RATIO; // 141.4% dari height
+      containerWidth = containerHeight * A4_RATIO;
     }
     
     // Hitung skala untuk gambar dalam container
@@ -227,30 +228,21 @@ export default function JpgToPdfPage() {
             let imageBytes: ArrayBuffer;
             let embeddedImage;
 
-            // Logika Kompresi & Embed
+            // Logika Kompresi
             if (quality === 'original') {
-               // Coba embed langsung dulu
                imageBytes = await fileObj.file.arrayBuffer();
-               
                try {
                    if (fileObj.file.type === 'image/png') {
-                       try {
-                           embeddedImage = await pdfDoc.embedPng(imageBytes);
-                       } catch (pngErr) {
-                           console.warn("PNG embed gagal, convert ke JPEG...");
-                           imageBytes = await compressImage(fileObj.file, 0.95);
-                           embeddedImage = await pdfDoc.embedJpg(imageBytes);
-                       }
+                       embeddedImage = await pdfDoc.embedPng(imageBytes);
                    } else {
                        embeddedImage = await pdfDoc.embedJpg(imageBytes);
                    }
                } catch (err) {
-                   console.error("Embed error, fallback ke canvas:", err);
+                   console.error("Gagal embed (Original), coba re-encode...", err);
                    imageBytes = await compressImage(fileObj.file, 0.9);
                    embeddedImage = await pdfDoc.embedJpg(imageBytes);
                }
             } else {
-               // Kompresi (Medium 0.7, Low 0.4)
                const qValue = quality === 'medium' ? 0.7 : 0.4;
                imageBytes = await compressImage(fileObj.file, qValue);
                embeddedImage = await pdfDoc.embedJpg(imageBytes);
@@ -358,6 +350,15 @@ export default function JpgToPdfPage() {
                             height: img.height
                           });
                         };
+                        img.onerror = () => {
+                          resolve({
+                            id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                            file: f,
+                            preview: URL.createObjectURL(f),
+                            width: 800,
+                            height: 600
+                          });
+                        };
                       });
                     });
                     
@@ -367,12 +368,55 @@ export default function JpgToPdfPage() {
                 }
             }}
           >
-             {/* ... Kode upload view sama seperti sebelumnya ... */}
+             <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
+                <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
+                
+                <div className="flex-1 max-w-2xl space-y-10 animate-in fade-in zoom-in duration-500 py-10">
+                    <div className="flex justify-center"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
+                    
+                    <div className="space-y-4 px-4">
+                      <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">{T.hero_title[lang]}</h1>
+                      <p className="text-slate-500 font-medium text-lg">{T.hero_desc[lang]}</p>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-6">
+                        <button onClick={() => fileInputRef.current?.click()} className="group relative bg-orange-600 hover:bg-orange-700 text-white text-lg font-bold py-5 px-16 rounded-2xl shadow-xl shadow-orange-200 transition-all active:scale-95 flex items-center justify-center gap-3 mx-auto uppercase tracking-widest">
+                           <ImagePlus size={24} /> {T.select_btn[lang]}
+                        </button>
+                        <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">{T.drop_text[lang]}</p>
+                    </div>
+                    
+                    <div className="flex justify-center mt-8"><AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" /></div>
+                 </div>
+
+                <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
+             </div>
           </div>
         ) : pdfUrl ? (
           // VIEW 2: DOWNLOAD
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-white overflow-y-auto">
-             {/* ... Kode download view sama seperti sebelumnya ... */}
+             <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
+                <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
+                
+                <div className="flex-1 max-w-lg space-y-8 animate-in slide-in-from-bottom duration-500">
+                    <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
+                    
+                    <div className="bg-white border border-slate-200 rounded-[30px] p-10 text-center shadow-2xl relative overflow-hidden">
+                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce"><CheckCircle2 size={40} strokeWidth={3} /></div>
+                        <h2 className="text-3xl font-black text-slate-900 mb-3">{T.success_title[lang]}</h2>
+                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">{T.success_desc[lang]}</p>
+                        
+                        <div className="flex flex-col gap-4">
+                           <a href={pdfUrl} download="Converted_Images.pdf" className="w-full bg-orange-600 hover:bg-orange-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 uppercase tracking-widest text-sm"><Download size={20} /> {T.download_btn[lang]}</a>
+                           <button onClick={() => { setFiles([]); setPdfUrl(null); }} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"><ArrowLeft size={16} /> {T.back_home[lang]}</button>
+                        </div>
+                    </div>
+                    
+                    <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
+                </div>
+                
+                <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
+             </div>
           </div>
         ) : (
           // VIEW 3: EDITOR GRID & SETTINGS DENGAN LIVE PREVIEW
@@ -383,7 +427,7 @@ export default function JpgToPdfPage() {
                <button onClick={() => setMobileTab(1)} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors ${mobileTab === 1 ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-400'}`}>{T.tab_settings[lang]}</button>
             </div>
 
-            {/* GRID AREA (Left) DENGAN LIVE PREVIEW */}
+            {/* GRID AREA (LEFT) */}
             <div className={`flex-1 flex flex-col h-full bg-slate-100 md:bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 md:p-8 overflow-hidden relative ${mobileTab === 0 ? 'flex' : 'hidden md:flex'}`}>
                 {/* ADS TOP */}
                 <div className="flex justify-center mb-4 shrink-0 overflow-hidden px-4">
