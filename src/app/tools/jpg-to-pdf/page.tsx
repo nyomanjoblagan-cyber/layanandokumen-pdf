@@ -211,7 +211,7 @@ export default function JpgToPdfPage() {
     });
   };
 
-  // --- 7. CONVERT ENGINE ---
+  // --- 7. CONVERT ENGINE (LOGIKA FIXING POSISI & SKALA) ---
   const handleConvert = async () => {
     if (files.length === 0) return;
     setIsProcessing(true);
@@ -248,12 +248,11 @@ export default function JpgToPdfPage() {
                embeddedImage = await pdfDoc.embedJpg(imageBytes);
             }
 
-            // Hitung Ukuran Halaman (A4)
+            // 1. Tentukan Ukuran Halaman (A4 Portrait/Landscape)
             const A4_PORTRAIT_WIDTH = 595.28;
             const A4_PORTRAIT_HEIGHT = 841.89;
             
             let pageWidth, pageHeight;
-            
             if (orientation === 'portrait') {
                 pageWidth = A4_PORTRAIT_WIDTH;
                 pageHeight = A4_PORTRAIT_HEIGHT;
@@ -264,17 +263,34 @@ export default function JpgToPdfPage() {
 
             const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
-            // Hitung Skala & Posisi
+            // 2. Hitung Ruang Tersedia (Available Space) setelah margin
             const availW = pageWidth - (margin * 2);
             const availH = pageHeight - (margin * 2);
-            const scale = Math.min(availW / embeddedImage.width, availH / embeddedImage.height);
-            const dims = embeddedImage.scale(scale);
 
+            // 3. LOGIKA BARU: Aspect Ratio Fitting (Agar tidak nge-zoom/kepotong)
+            // Hitung rasio aspek gambar asli dan rasio ruang tersedia
+            const imgRatio = embeddedImage.width / embeddedImage.height;
+            const availRatio = availW / availH;
+
+            let finalW, finalH;
+
+            // Bandingkan rasio untuk menentukan sisi mana yang "mentok" duluan
+            if (imgRatio > availRatio) {
+                // Gambar lebih 'lebar' secara proporsional daripada ruangnya -> Mentok di Lebar (Fit Width)
+                finalW = availW;
+                finalH = availW / imgRatio;
+            } else {
+                // Gambar lebih 'tinggi' secara proporsional daripada ruangnya -> Mentok di Tinggi (Fit Height)
+                finalH = availH;
+                finalW = finalH * imgRatio;
+            }
+
+            // 4. Gambar di tengah halaman (Centering yang presisi)
             page.drawImage(embeddedImage, {
-                x: (pageWidth - dims.width) / 2,
-                y: (pageHeight - dims.height) / 2,
-                width: dims.width,
-                height: dims.height
+                x: (pageWidth - finalW) / 2,
+                y: (pageHeight - finalH) / 2,
+                width: finalW,
+                height: finalH
             });
         }
         
