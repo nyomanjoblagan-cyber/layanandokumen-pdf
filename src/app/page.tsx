@@ -14,71 +14,90 @@ import AdsterraBanner from '@/components/AdsterraBanner';
 // --- TYPE ---
 type Language = 'id' | 'en';
 
-// --- DATA TOOLS LENGKAP 24 ---
+// --- DATA TOOLS LENGKAP (DESKRIPSI PANJANG) ---
 const TOOLS = [
   // POPULER (6 tools)
   { 
     id: 'jpg-to-pdf', 
     title: { id: 'JPG ke PDF', en: 'JPG to PDF' }, 
-    desc: { id: 'Ubah foto menjadi PDF.', en: 'Convert photos to PDF.' }, 
+    desc: { 
+      id: 'Ubah gambar JPG, JPEG, atau PNG menjadi dokumen PDF dengan mudah. Mendukung konversi banyak gambar sekaligus.', 
+      en: 'Convert JPG, JPEG, or PNG images into PDF documents easily. Supports batch conversion of multiple images.' 
+    }, 
     icon: Image, category: 'Populer', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', border_hover: 'hover:border-orange-300', badge: 'from-orange-500 to-amber-400'
   },
   { 
     id: 'merge-pdf', 
     title: { id: 'Gabung PDF', en: 'Merge PDF' }, 
-    desc: { id: 'Satukan banyak file PDF.', en: 'Combine multiple PDFs.' }, 
+    desc: { 
+      id: 'Satukan beberapa file PDF terpisah menjadi satu dokumen tunggal yang rapi dan terurut sesuai keinginan Anda.', 
+      en: 'Combine multiple separate PDF files into a single, neat document ordered exactly how you want it.' 
+    }, 
     icon: Combine, category: 'Populer', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', border_hover: 'hover:border-purple-300', badge: 'from-purple-500 to-pink-400'
   },
   { 
     id: 'compress-pdf', 
     title: { id: 'Kompres PDF', en: 'Compress PDF' }, 
-    desc: { id: 'Kecilkan ukuran file PDF.', en: 'Reduce PDF file size.' }, 
+    desc: { 
+      id: 'Kecilkan ukuran file PDF secara signifikan tanpa mengurangi kualitas visual dokumen agar mudah dikirim.', 
+      en: 'Significantly reduce PDF file size without compromising document visual quality for easy sharing.' 
+    }, 
     icon: Minimize, category: 'Populer', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', border_hover: 'hover:border-emerald-300', badge: 'from-emerald-500 to-teal-400'
   },
   { 
     id: 'split-pdf', 
     title: { id: 'Pisah PDF', en: 'Split PDF' }, 
-    desc: { id: 'Ambil halaman tertentu.', en: 'Separate specific pages.' }, 
+    desc: { 
+      id: 'Ambil satu halaman tertentu atau pecah seluruh dokumen PDF menjadi beberapa file terpisah secara instan.', 
+      en: 'Extract specific pages or split the entire PDF document into separate files instantly.' 
+    }, 
     icon: Scissors, category: 'Populer', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', border_hover: 'hover:border-rose-300', badge: 'from-rose-500 to-pink-400'
   },
   { 
     id: 'edit-pdf', 
     title: { id: 'Edit PDF', en: 'Edit PDF' }, 
-    desc: { id: 'Tambahkan teks manual.', en: 'Add manual text.' }, 
+    desc: { 
+      id: 'Tambahkan teks, gambar, bentuk, atau coretan tangan pada dokumen PDF Anda langsung di browser.', 
+      en: 'Add text, images, shapes, or freehand drawings to your PDF document directly in the browser.' 
+    }, 
     icon: FilePenLine, category: 'Populer', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', border_hover: 'hover:border-indigo-300', badge: 'from-indigo-500 to-blue-400'
   },
   { 
     id: 'scan-pdf', 
     title: { id: 'Scan PDF', en: 'Scan PDF' }, 
-    desc: { id: 'Scan dokumen pakai kamera.', en: 'Scan docs via camera.' }, 
+    desc: { 
+      id: 'Gunakan kamera HP Anda untuk memindai dokumen fisik dan menyimpannya sebagai file PDF yang jernih.', 
+      en: 'Use your phone camera to scan physical documents and save them as clear PDF files.' 
+    }, 
     icon: Camera, category: 'Populer', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-500 to-cyan-400'
   },
 
   // KONVERSI
-  { id: 'pdf-to-jpg', title: { id: 'PDF ke JPG', en: 'PDF to JPG' }, desc: { id: 'Simpan halaman jadi gambar.', en: 'Save pages as images.' }, icon: Image, category: 'Konversi', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', border_hover: 'hover:border-amber-300', badge: 'from-amber-500 to-yellow-400' },
-  { id: 'pdf-to-png', title: { id: 'PDF ke PNG', en: 'PDF to PNG' }, desc: { id: 'Simpan PDF jadi PNG.', en: 'Convert PDF to PNG.' }, icon: FileImage, category: 'Konversi', color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100', border_hover: 'hover:border-teal-300', badge: 'from-teal-500 to-emerald-400' },
-  { id: 'pdf-to-text', title: { id: 'PDF ke Text', en: 'PDF to Text' }, desc: { id: 'Salin tulisan dari PDF.', en: 'Extract text from PDF.' }, icon: FileText, category: 'Konversi', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
-  { id: 'png-to-pdf', title: { id: 'PNG ke PDF', en: 'PNG to PDF' }, desc: { id: 'Gambar PNG jadi PDF.', en: 'Turn PNG into PDF.' }, icon: FileImage, category: 'Konversi', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', border_hover: 'hover:border-cyan-300', badge: 'from-cyan-500 to-sky-400' },
-  { id: 'flatten-pdf', title: { id: 'Ratakan PDF', en: 'Flatten PDF' }, desc: { id: 'Kunci elemen interaktif.', en: 'Lock interactive elements.' }, icon: Layers, category: 'Konversi', color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-100', border_hover: 'hover:border-gray-300', badge: 'from-gray-600 to-slate-500' },
-  { id: 'pdf-to-html', title: { id: 'PDF ke HTML', en: 'PDF to HTML' }, desc: { id: 'PDF jadi halaman web.', en: 'PDF to web page.' }, icon: FileCode, category: 'Konversi', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100', border_hover: 'hover:border-pink-300', badge: 'from-pink-500 to-rose-400' },
+  { id: 'pdf-to-jpg', title: { id: 'PDF ke JPG', en: 'PDF to JPG' }, desc: { id: 'Ubah setiap halaman dokumen PDF menjadi file gambar JPG berkualitas tinggi untuk kebutuhan grafis.', en: 'Convert every PDF page into high-quality JPG image files for graphic needs.' }, icon: Image, category: 'Konversi', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', border_hover: 'hover:border-amber-300', badge: 'from-amber-500 to-yellow-400' },
+  { id: 'pdf-to-png', title: { id: 'PDF ke PNG', en: 'PDF to PNG' }, desc: { id: 'Simpan halaman PDF sebagai gambar PNG dengan latar belakang transparan dan kualitas lossless.', en: 'Save PDF pages as PNG images with transparent backgrounds and lossless quality.' }, icon: FileImage, category: 'Konversi', color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100', border_hover: 'hover:border-teal-300', badge: 'from-teal-500 to-emerald-400' },
+  { id: 'pdf-to-text', title: { id: 'PDF ke Teks', en: 'PDF to Text' }, desc: { id: 'Ekstrak seluruh tulisan dari file PDF menjadi format teks biasa (.txt) yang bisa diedit di Notepad.', en: 'Extract all text from PDF files into plain text format (.txt) editable in Notepad.' }, icon: FileText, category: 'Konversi', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
+  { id: 'png-to-pdf', title: { id: 'PNG ke PDF', en: 'PNG to PDF' }, desc: { id: 'Konversi kumpulan gambar PNG menjadi satu file PDF. Cocok untuk menyatukan hasil scan atau desain.', en: 'Convert a collection of PNG images into a single PDF file. Perfect for combining scans or designs.' }, icon: FileImage, category: 'Konversi', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', border_hover: 'hover:border-cyan-300', badge: 'from-cyan-500 to-sky-400' },
+  { id: 'flatten-pdf', title: { id: 'Ratakan PDF', en: 'Flatten PDF' }, desc: { id: 'Gabungkan layer, kunci formulir, dan elemen interaktif agar dokumen tidak bisa diedit ulang.', en: 'Merge layers, lock forms, and interactive elements so the document cannot be re-edited.' }, icon: Layers, category: 'Konversi', color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-100', border_hover: 'hover:border-gray-300', badge: 'from-gray-600 to-slate-500' },
+  { id: 'pdf-to-html', title: { id: 'PDF ke HTML', en: 'PDF to HTML' }, desc: { id: 'Ubah dokumen PDF menjadi halaman web HTML yang responsif dan ringan untuk dipublikasikan.', en: 'Convert PDF documents into responsive and lightweight HTML web pages for publication.' }, icon: FileCode, category: 'Konversi', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100', border_hover: 'hover:border-pink-300', badge: 'from-pink-500 to-rose-400' },
 
   // EDIT
-  { id: 'rotate-pdf', title: { id: 'Putar PDF', en: 'Rotate PDF' }, desc: { id: 'Perbaiki orientasi halaman.', en: 'Fix page orientation.' }, icon: RefreshCcw, category: 'Edit', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100', border_hover: 'hover:border-violet-300', badge: 'from-violet-500 to-purple-400' },
-  { id: 'delete-pages', title: { id: 'Hapus Halaman', en: 'Delete Pages' }, desc: { id: 'Buang halaman.', en: 'Remove pages.' }, icon: Trash2, category: 'Edit', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', border_hover: 'hover:border-rose-300', badge: 'from-rose-500 to-red-400' },
-  { id: 'rearrange-pdf', title: { id: 'Urutkan Halaman', en: 'Rearrange PDF' }, desc: { id: 'Geser urutan halaman.', en: 'Reorder pages.' }, icon: Layout, category: 'Edit', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-400 to-sky-300' },
-  { id: 'extract-pages', title: { id: 'Ambil Halaman', en: 'Extract Pages' }, desc: { id: 'Simpan halaman pilihan.', en: 'Save selected pages.' }, icon: FileUp, category: 'Edit', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', border_hover: 'hover:border-emerald-300', badge: 'from-emerald-500 to-green-400' },
-  { id: 'add-page-numbers', title: { id: 'Nomor Halaman', en: 'Page Numbers' }, desc: { id: 'Sisipkan nomor otomatis.', en: 'Insert page numbers.' }, icon: BookOpen, category: 'Edit', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
-  { id: 'resize-pdf', title: { id: 'Ubah Ukuran PDF', en: 'Resize PDF' }, desc: { id: 'Ganti ukuran kertas (A4).', en: 'Change page size (A4).' }, icon: Maximize, category: 'Edit', color: 'text-fuchsia-600', bg: 'bg-fuchsia-50', border: 'border-fuchsia-100', border_hover: 'hover:border-fuchsia-300', badge: 'from-fuchsia-500 to-pink-400' },
-  { id: 'add-image-pdf', title: { id: 'Tambah Gambar', en: 'Add Image to PDF' }, desc: { id: 'Sisipkan logo/foto.', en: 'Insert logo/photo.' }, icon: FileImage, category: 'Edit', color: 'text-lime-600', bg: 'bg-lime-50', border: 'border-lime-100', border_hover: 'hover:border-lime-300', badge: 'from-lime-500 to-green-400' },
-  { id: 'fill-form', title: { id: 'Isi Formulir', en: 'Fill PDF Forms' }, desc: { id: 'Isi kolom formulir PDF.', en: 'Fill PDF form fields.' }, icon: PenTool, category: 'Edit', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', border_hover: 'hover:border-indigo-300', badge: 'from-indigo-500 to-blue-400' },
+  { id: 'rotate-pdf', title: { id: 'Putar PDF', en: 'Rotate PDF' }, desc: { id: 'Putar halaman PDF yang terbalik. Bisa putar satu halaman atau seluruh dokumen sekaligus.', en: 'Rotate upside-down PDF pages. Rotate single pages or the entire document at once.' }, icon: RefreshCcw, category: 'Edit', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100', border_hover: 'hover:border-violet-300', badge: 'from-violet-500 to-purple-400' },
+  { id: 'delete-pages', title: { id: 'Hapus Halaman', en: 'Delete Pages' }, desc: { id: 'Pilih dan hapus halaman yang tidak diinginkan dari file PDF Anda dengan cepat.', en: 'Select and remove unwanted pages from your PDF file quickly.' }, icon: Trash2, category: 'Edit', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', border_hover: 'hover:border-rose-300', badge: 'from-rose-500 to-red-400' },
+  { id: 'rearrange-pdf', title: { id: 'Urutkan Halaman', en: 'Rearrange PDF' }, desc: { id: 'Geser dan atur ulang urutan halaman PDF dengan cara drag-and-drop yang intuitif.', en: 'Drag and drop to rearrange PDF page order intuitively.' }, icon: Layout, category: 'Edit', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-400 to-sky-300' },
+  { id: 'extract-pages', title: { id: 'Ambil Halaman', en: 'Extract Pages' }, desc: { id: 'Pilih halaman tertentu dari PDF dan simpan sebagai file PDF baru yang terpisah.', en: 'Select specific pages from a PDF and save them as a new separate PDF file.' }, icon: FileUp, category: 'Edit', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', border_hover: 'hover:border-emerald-300', badge: 'from-emerald-500 to-green-400' },
+  { id: 'add-page-numbers', title: { id: 'Nomor Halaman', en: 'Page Numbers' }, desc: { id: 'Sisipkan nomor halaman otomatis di header atau footer dokumen dengan format kustom.', en: 'Insert automatic page numbers in the header or footer with custom formatting.' }, icon: BookOpen, category: 'Edit', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
+  { id: 'resize-pdf', title: { id: 'Ubah Ukuran PDF', en: 'Resize PDF' }, desc: { id: 'Ubah ukuran kertas PDF (misal: A4 ke Letter) dan sesuaikan skala kontennya.', en: 'Change PDF paper size (e.g., A4 to Letter) and scale its content.' }, icon: Maximize, category: 'Edit', color: 'text-fuchsia-600', bg: 'bg-fuchsia-50', border: 'border-fuchsia-100', border_hover: 'hover:border-fuchsia-300', badge: 'from-fuchsia-500 to-pink-400' },
+  { id: 'add-image-pdf', title: { id: 'Tambah Gambar', en: 'Add Image to PDF' }, desc: { id: 'Sisipkan logo, foto, atau gambar ke dalam halaman PDF di posisi yang Anda inginkan.', en: 'Insert logos, photos, or images into PDF pages at your desired position.' }, icon: FileImage, category: 'Edit', color: 'text-lime-600', bg: 'bg-lime-50', border: 'border-lime-100', border_hover: 'hover:border-lime-300', badge: 'from-lime-500 to-green-400' },
+  { id: 'fill-form', title: { id: 'Isi Formulir', en: 'Fill PDF Forms' }, desc: { id: 'Isi kolom teks, centang kotak, dan tanda tangan pada formulir PDF secara digital.', en: 'Fill text fields, checkboxes, and sign PDF forms digitally.' }, icon: PenTool, category: 'Edit', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', border_hover: 'hover:border-indigo-300', badge: 'from-indigo-500 to-blue-400' },
 
   // KEAMANAN
-  { id: 'protect-pdf', title: { id: 'Kunci PDF', en: 'Protect PDF' }, desc: { id: 'Pasang password.', en: 'Set password.' }, icon: Lock, category: 'Keamanan', color: 'text-slate-800', bg: 'bg-slate-100', border: 'border-slate-200', border_hover: 'hover:border-slate-400', badge: 'from-slate-700 to-gray-600' },
-  { id: 'unlock-pdf', title: { id: 'Buka PDF', en: 'Unlock PDF' }, desc: { id: 'Hapus password.', en: 'Remove password.' }, icon: Unlock, category: 'Keamanan', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100', border_hover: 'hover:border-pink-300', badge: 'from-pink-500 to-rose-400' },
-  { id: 'watermark-pdf', title: { id: 'Watermark PDF', en: 'Watermark PDF' }, desc: { id: 'Tempel cap transparan.', en: 'Add transparent stamp.' }, icon: BadgeCheck, category: 'Keamanan', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-100', border_hover: 'hover:border-red-300', badge: 'from-red-600 to-orange-500' },
-  { id: 'esign-pdf', title: { id: 'Tanda Tangan PDF', en: 'eSign PDF' }, desc: { id: 'Tanda tangan digital.', en: 'Digital signature.' }, icon: FileSignature, category: 'Keamanan', color: 'text-blue-800', bg: 'bg-blue-100', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-600 to-cyan-500' }
+  { id: 'protect-pdf', title: { id: 'Kunci PDF', en: 'Protect PDF' }, desc: { id: 'Amankan dokumen rahasia dengan enkripsi password yang kuat agar tidak bisa dibuka sembarangan.', en: 'Secure confidential documents with strong password encryption.' }, icon: Lock, category: 'Keamanan', color: 'text-slate-800', bg: 'bg-slate-100', border: 'border-slate-200', border_hover: 'hover:border-slate-400', badge: 'from-slate-700 to-gray-600' },
+  { id: 'unlock-pdf', title: { id: 'Buka PDF', en: 'Unlock PDF' }, desc: { id: 'Hapus password dan batasan keamanan dari file PDF (jika Anda mengetahui passwordnya).', en: 'Remove passwords and security restrictions from PDF files.' }, icon: Unlock, category: 'Keamanan', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100', border_hover: 'hover:border-pink-300', badge: 'from-pink-500 to-rose-400' },
+  { id: 'watermark-pdf', title: { id: 'Watermark PDF', en: 'Watermark PDF' }, desc: { id: 'Tempelkan teks atau gambar transparan (watermark) untuk melindungi hak cipta dokumen.', en: 'Stamp transparent text or images (watermark) to protect document copyright.' }, icon: BadgeCheck, category: 'Keamanan', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-100', border_hover: 'hover:border-red-300', badge: 'from-red-600 to-orange-500' },
+  { id: 'esign-pdf', title: { id: 'Tanda Tangan PDF', en: 'eSign PDF' }, desc: { id: 'Buat dan bubuhkan tanda tangan digital pada dokumen PDF tanpa perlu mencetak.', en: 'Create and apply digital signatures to PDF documents without printing.' }, icon: FileSignature, category: 'Keamanan', color: 'text-blue-800', bg: 'bg-blue-100', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-600 to-cyan-500' }
 ];
 
+// TAB CATEGORIES
 const TAB_CATEGORIES = [
   { name: 'All', label: { id: 'Semua Alat', en: 'All Tools' }, icon: Grid3x3, color: 'from-slate-600 to-gray-500' },
   { name: 'Populer', label: { id: 'Populer', en: 'Popular' }, icon: Zap, color: 'from-orange-500 to-amber-400' },
@@ -102,7 +121,7 @@ const UI_TEXT = {
   sponsored: { id: 'Iklan', en: 'Ad' },
   change_lang: { id: 'Bahasa', en: 'Language' },
   promo_title: { id: 'Layanan Kami Lainnya', en: 'Our Other Services' },
-  footer_desc: { id: 'LayananPDF menyediakan solusi pengelolaan dokumen digital yang aman dan efisien.', en: 'LayananPDF provides secure and efficient digital document solutions.' },
+  footer_desc: { id: 'LayananPDF menyediakan solusi pengelolaan dokumen digital yang aman, cepat, dan efisien untuk kebutuhan personal maupun bisnis.', en: 'LayananPDF provides secure, fast, and efficient digital document solutions for personal and business needs.' },
   footer_links: { id: 'Tautan', en: 'Links' },
   footer_legal: { id: 'Legal', en: 'Legal' },
   privacy: { id: 'Privasi', en: 'Privacy' },
@@ -115,14 +134,28 @@ const OTHER_WEBSITES = [
   {
     name: 'LatihanOnline.com',
     url: 'https://www.latihanonline.com',
-    desc: { id: 'Bank Soal & Ujian Sekolah Gratis (SD-SMK).', en: 'Free School Exam & Question Bank.' },
-    color: 'text-orange-600', bg_hover: 'hover:bg-orange-50', border_hover: 'hover:border-orange-200', bg_icon: 'bg-orange-100', icon: BookOpen
+    desc: { 
+      id: 'Bank Soal & Ujian Sekolah Gratis (SD-SMK). Pusat latihan soal online terlengkap dengan pembahasan materi & jawaban untuk membantu belajar siswa.', 
+      en: 'Free School Exam & Question Bank. Complete online practice center with materials & answers to help students learn.' 
+    },
+    color: 'text-orange-600', 
+    bg_hover: 'hover:bg-orange-50',
+    border_hover: 'hover:border-orange-200',
+    bg_icon: 'bg-orange-100',
+    icon: BookOpen
   },
   {
     name: 'LayananDokumen.com',
     url: 'https://www.layanandokumen.com',
-    desc: { id: 'Generator dokumen resmi otomatis.', en: 'Automatic official document generator.' },
-    color: 'text-blue-600', bg_hover: 'hover:bg-blue-50', border_hover: 'hover:border-blue-200', bg_icon: 'bg-blue-100', icon: FileText
+    desc: { 
+      id: 'Pusat Administrasi & Surat Resmi. Platform penyusunan dokumen administratif, invoice UMKM, surat lamaran kerja, dan legalitas dasar secara otomatis.', 
+      en: 'Administrative & Official Letter Center. Platform for drafting administrative documents, SME invoices, job application letters, and basic legality automatically.' 
+    },
+    color: 'text-blue-600', 
+    bg_hover: 'hover:bg-blue-50',
+    border_hover: 'hover:border-blue-200',
+    bg_icon: 'bg-blue-100',
+    icon: FileText
   }
 ];
 
@@ -194,7 +227,7 @@ export default function Home() {
       if (activeTab === 'All' && !search) {
          if (currentSlot === 4 || currentSlot === 10 || currentSlot === 16 || currentSlot === 22) {
             items.push(
-              <div key={`ad-slot-${currentSlot}`} className="h-[180px] col-span-2 md:col-span-1 rounded-lg border border-slate-200 flex flex-col items-center justify-center relative overflow-hidden bg-white">
+              <div key={`ad-slot-${currentSlot}`} className="h-[200px] col-span-2 md:col-span-1 rounded-lg border border-slate-200 flex flex-col items-center justify-center relative overflow-hidden bg-white">
                  <div className="absolute top-2 right-2 px-2 py-1 bg-slate-100 rounded text-xs font-medium text-slate-600 uppercase tracking-wide z-10">
                    {UI_TEXT.sponsored[lang]}
                  </div>
@@ -210,7 +243,7 @@ export default function Home() {
       const tool = tools[toolIndex];
       if (tool) {
         items.push(
-            <Link href={`/tools/${tool.id}`} key={tool.id} className="block h-[180px] group">
+            <Link href={`/tools/${tool.id}`} key={tool.id} className="block h-[200px] group">
             <div className={`h-full p-5 rounded-lg border ${tool.border} ${tool.border_hover} transition-all duration-200 flex flex-col justify-between relative cursor-pointer ${tool.bg}`}>
                 
                 {/* DEKORASI: IKON TRANSPARAN */}
@@ -225,14 +258,14 @@ export default function Home() {
                     </div>
 
                     <div className="flex items-start justify-between mb-3">
-                        <div className={`w-10 h-10 flex items-center justify-center rounded-lg shadow-sm bg-white ${tool.color} group-hover:scale-105 transition-transform duration-200`}>
-                            <tool.icon className="w-5 h-5" strokeWidth={2} />
+                        <div className={`w-12 h-12 flex items-center justify-center rounded-lg shadow-sm bg-white ${tool.color} group-hover:scale-105 transition-transform duration-200`}>
+                            <tool.icon className="w-6 h-6" strokeWidth={2} />
                         </div>
-                        <ArrowRight size={16} className="text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                        <ArrowRight size={18} className="text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
                     </div>
 
                     <div>
-                        <h3 className="font-bold text-base text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
+                        <h3 className="font-bold text-lg text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
                             {tool.title[lang]}
                         </h3>
                         <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
@@ -270,7 +303,7 @@ export default function Home() {
             </span>
           </Link>
 
-          {/* Links Cleaned Up */}
+          {/* Links Cleaned Up - Only Language Button */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
             <button onClick={toggleLang} className="flex items-center gap-1 hover:text-blue-600 font-bold px-3 py-1.5 rounded bg-slate-50 border border-slate-200 text-xs uppercase tracking-wide transition-colors">
                <Globe size={12} /> {lang}
