@@ -10,49 +10,52 @@ import {
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
-// 1. WORKER STABIL (Wajib)
+// 1. WORKER STABIL
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
 
+// Struktur data untuk menyimpan ingatan coretan
 type Point = { x: number; y: number };
+type Stroke = Point[];
 
 export default function SignPdfPage() {
-  // STATE UTAMA
+  // --- STATE UTAMA ---
   const [file, setFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   
-  // SIGNATURE STATE (Canvas)
+  // --- SIGNATURE CORE ---
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null); 
+  const containerRef = useRef<HTMLDivElement>(null);
   
+  // "Ingatan" Coretan
+  const strokesRef = useRef<Stroke[]>([]); 
+  const currentStrokeRef = useRef<Stroke>([]);
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureImage, setSignatureImage] = useState<string | null>(null);
   const [hasSignature, setHasSignature] = useState(false);
   
-  // SETTINGS
+  // SETTINGS (Slider & Warna)
   const [penColor, setPenColor] = useState('#000000'); 
   const [penWidth, setPenWidth] = useState(3);
   
-  // POSITIONING (Drag Logic)
+  // POSITIONING (Untuk memindahkan TTD di PDF)
   const [sigScale, setSigScale] = useState(30); 
   const [sigX, setSigX] = useState(50); 
   const [sigY, setSigY] = useState(50); 
-  
-  // DRAG INTERACTION STATE
   const [interactionMode, setInteractionMode] = useState<'none' | 'drag' | 'resize'>('none');
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 }); // Offset agar tidak loncat
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  // UI & BAHASA
+  // UI
   const [lang, setLang] = useState<'id' | 'en'>('id');
   const [mobileTab, setMobileTab] = useState<0 | 1>(1); 
   const [isLoaded, setIsLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- LOGIKA BAHASA ---
   useEffect(() => {
     const saved = localStorage.getItem('user-lang') as 'id' | 'en';
     if (saved) setLang(saved);
@@ -65,25 +68,31 @@ export default function SignPdfPage() {
     localStorage.setItem('user-lang', newLang);
   };
 
+  // Efek Khusus: Ketika Slider/Warna berubah, gambar ulang semua coretan yang tersimpan
+  useEffect(() => {
+    if (hasSignature) {
+        redrawAllStrokes();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [penColor, penWidth]);
+
   const T = {
     hero_title: { id: 'Tanda Tangan PDF', en: 'Sign PDF' },
-    hero_desc: { id: 'Buat tanda tangan digital dan tempelkan langsung ke dokumen PDF Anda.', en: 'Create digital signature and place it directly onto your PDF document.' },
+    hero_desc: { id: 'Tanda tangan super responsif. Atur tebal tipis sesuka hati.', en: 'Super responsive signature. Adjust thickness as you like.' },
     select_btn: { id: 'Pilih File PDF', en: 'Select PDF File' },
-    tab_sign: { id: 'Buat Tanda Tangan', en: 'Create Signature' },
-    tab_preview: { id: 'Pratinjau', en: 'Preview' },
-    draw_hint: { id: 'Gambar tanda tangan di sini', en: 'Draw signature here' },
-    clear_btn: { id: 'Hapus', en: 'Clear' },
-    lbl_color: { id: 'Warna Pena', en: 'Pen Color' },
-    lbl_width: { id: 'Ketebalan', en: 'Thickness' },
-    lbl_size: { id: 'Ukuran', en: 'Size' },
+    tab_sign: { id: 'Area Tanda Tangan', en: 'Signature Area' },
+    tab_preview: { id: 'Pratinjau Dokumen', en: 'Document Preview' },
+    draw_hint: { id: 'Tanda Tangan Disini', en: 'Sign Here' },
+    lbl_color: { id: 'Warna', en: 'Color' },
+    lbl_width: { id: 'Ketebalan Pena', en: 'Pen Thickness' },
+    lbl_size: { id: 'Ukuran di PDF', en: 'Size on PDF' },
     save_btn: { id: 'Simpan PDF', en: 'Save PDF' },
     download_btn: { id: 'Download PDF', en: 'Download PDF' },
-    back_home: { id: 'Tanda Tangan Lagi', en: 'Sign Another' },
+    back_home: { id: 'Ulangi', en: 'Repeat' },
     cancel: { id: 'Tutup', en: 'Close' },
     loading: { id: 'MEMUAT...', en: 'LOADING...' },
-    saving: { id: 'MENYIMPAN...', en: 'SAVING...' },
     success_title: { id: 'Berhasil!', en: 'Success!' },
-    drag_hint: { id: 'Tekan & Tahan tanda tangan untuk memindahkan', en: 'Press & Hold signature to move' }
+    drag_hint: { id: 'Tahan tanda tangan untuk memindahkan', en: 'Hold signature to move' }
   };
 
   // --- 1. PROSES PDF ---
@@ -109,41 +118,70 @@ export default function SignPdfPage() {
     } catch (e) { alert("Gagal muat PDF"); setFile(null); } finally { setIsProcessing(false); }
   };
 
-  // --- 2. LOGIKA DRAWING (ZERO LAG) ---
-  // Fungsi helper untuk mendapatkan koordinat mouse/touch relatif terhadap canvas
+  // --- 2. ENGINE GAMBAR HYBRID (CEPAT + BISA DIEDIT) ---
+  
+  // Fungsi Gambar Ulang (Dipanggil saat slider digeser)
+  const redrawAllStrokes = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Bersihkan kanvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Setup Style Terbaru
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = penColor;
+      ctx.lineWidth = penWidth; // Pakai ketebalan terbaru
+
+      // Gambar ulang semua ingatan
+      strokesRef.current.forEach(stroke => {
+          if (stroke.length < 1) return;
+          ctx.beginPath();
+          ctx.moveTo(stroke[0].x, stroke[0].y);
+          for (let i = 1; i < stroke.length; i++) {
+              ctx.lineTo(stroke[i].x, stroke[i].y);
+          }
+          ctx.stroke();
+      });
+
+      // Update gambar hasil untuk ditempel ke PDF
+      setSignatureImage(canvas.toDataURL());
+  };
+
   const getCoords = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
       const rect = canvas.getBoundingClientRect();
       const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-      
-      // Scaling factor (penting jika canvas di-resize CSS)
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
-
-      return {
-          x: (clientX - rect.left) * scaleX,
-          y: (clientY - rect.top) * scaleY
-      };
+      return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   };
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-      e.preventDefault(); // Mencegah scrolling di HP
+      e.preventDefault(); 
       setIsDrawing(true);
-      setHasSignature(true); // Hilangkan teks "Sign Here"
+      setHasSignature(true);
 
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const { x, y } = getCoords(e, canvas);
+      const point = getCoords(e, canvas);
       
+      // Mulai Path Baru di Canvas (Visual Cepat)
       ctx.beginPath();
-      ctx.moveTo(x, y);
+      ctx.moveTo(point.x, point.y);
       ctx.lineWidth = penWidth;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.strokeStyle = penColor;
+
+      // Simpan Titik Awal ke Ingatan
+      currentStrokeRef.current = [point];
   };
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
@@ -155,10 +193,14 @@ export default function SignPdfPage() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const { x, y } = getCoords(e, canvas);
+      const point = getCoords(e, canvas);
 
-      ctx.lineTo(x, y);
-      ctx.stroke(); // Gambar langsung! Tidak menunggu state update.
+      // Gambar langsung (Biar ngebut)
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+
+      // Simpan titik ke ingatan
+      currentStrokeRef.current.push(point);
   };
 
   const stopDrawing = () => {
@@ -169,7 +211,11 @@ export default function SignPdfPage() {
       if (canvas) {
           const ctx = canvas.getContext('2d');
           ctx?.closePath();
-          // Simpan snapshot gambar tanda tangan
+          
+          // Pindahkan stroke saat ini ke memori permanen
+          strokesRef.current.push([...currentStrokeRef.current]);
+          currentStrokeRef.current = []; // Reset stroke sementara
+          
           setSignatureImage(canvas.toDataURL());
       }
   };
@@ -180,71 +226,50 @@ export default function SignPdfPage() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Hapus Ingatan
+      strokesRef.current = [];
+      currentStrokeRef.current = [];
+      
       setHasSignature(false);
       setSignatureImage(null);
   };
 
-  // --- 3. LOGIKA DRAG & DROP TANDA TANGAN (OFFSET-BASED) ---
-  
-  // A. Mulai Drag (Mouse Down)
+  // --- 3. LOGIKA DRAG & DROP ---
   const handleStartInteraction = (e: React.MouseEvent | React.TouchEvent, type: 'drag' | 'resize') => {
-    e.stopPropagation(); // Jangan tembus ke container
-    // e.preventDefault(); 
-
+    e.stopPropagation(); 
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    
-    // Posisi Mouse/Touch Absolut
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
 
     if (type === 'drag') {
-        // Hitung Offset: Jarak antara kursor mouse dengan titik pusat gambar saat ini.
-        // Ini kuncinya agar gambar tidak 'loncat' ke tengah mouse saat diklik.
         const currentXPx = (sigX / 100) * rect.width;
         const currentYPx = (sigY / 100) * rect.height;
         const mouseXRel = clientX - rect.left;
         const mouseYRel = clientY - rect.top;
-
-        setDragOffset({
-            x: mouseXRel - currentXPx,
-            y: mouseYRel - currentYPx
-        });
+        setDragOffset({ x: mouseXRel - currentXPx, y: mouseYRel - currentYPx });
     }
-
     setInteractionMode(type);
   };
 
-  // B. Sedang Drag (Mouse Move - Global)
   const handleInteractionMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (interactionMode === 'none' || !containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-
-    // Posisi Mouse relatif terhadap Container
     const mouseXRel = clientX - rect.left;
     const mouseYRel = clientY - rect.top;
 
     if (interactionMode === 'drag') {
-        // Posisi baru = Posisi Mouse - Offset Awal
         let newXPx = mouseXRel - dragOffset.x;
         let newYPx = mouseYRel - dragOffset.y;
-
-        // Konversi ke Persen
         let newXPercent = (newXPx / rect.width) * 100;
         let newYPercent = (newYPx / rect.height) * 100;
-
-        // Clamp (Batasi agar tidak keluar layar)
-        newXPercent = Math.max(0, Math.min(100, newXPercent));
-        newYPercent = Math.max(0, Math.min(100, newYPercent));
-
-        setSigX(newXPercent);
-        setSigY(newYPercent);
-
+        setSigX(Math.max(0, Math.min(100, newXPercent)));
+        setSigY(Math.max(0, Math.min(100, newYPercent)));
     } else if (interactionMode === 'resize') {
-        // Logic Resize Sederhana (Jarak Mouse dari Pusat Gambar)
         const centerX = rect.left + (sigX / 100) * rect.width;
         const dist = Math.abs(clientX - centerX);
         const newScale = (dist * 2 / rect.width) * 100;
@@ -252,10 +277,7 @@ export default function SignPdfPage() {
     }
   };
 
-  // C. Selesai Drag (Mouse Up)
-  const handleEndInteraction = () => {
-    setInteractionMode('none');
-  };
+  const handleEndInteraction = () => setInteractionMode('none');
 
   // --- 4. SIMPAN PDF ---
   const handleSave = async () => {
@@ -285,7 +307,6 @@ export default function SignPdfPage() {
   return (
     <div 
       className="min-h-screen bg-[#F8FAFC] flex flex-col overflow-hidden text-slate-800 font-sans"
-      // Event Handler Global untuk Move & Up (Supaya kalau mouse keluar elemen, drag tetap jalan)
       onMouseMove={handleInteractionMove} onTouchMove={handleInteractionMove} 
       onMouseUp={handleEndInteraction} onTouchEnd={handleEndInteraction}
     >
@@ -333,7 +354,7 @@ export default function SignPdfPage() {
                         <h2 className="text-3xl font-black text-slate-900 mb-3">{T.success_title[lang]}</h2>
                         <div className="flex flex-col gap-4 mt-8">
                            <a href={pdfUrl} download={`Signed_${file?.name}`} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 uppercase tracking-widest text-sm"><Download size={20} /> {T.download_btn[lang]}</a>
-                           <button onClick={() => { setFile(null); setPdfUrl(null); setHasSignature(false); setSignatureImage(null); clearCanvas(); }} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"><ArrowLeft size={16} /> {T.back_home[lang]}</button>
+                           <button onClick={() => { setFile(null); setPdfUrl(null); clearCanvas(); }} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"><ArrowLeft size={16} /> {T.back_home[lang]}</button>
                         </div>
                     </div>
                     <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
@@ -348,7 +369,7 @@ export default function SignPdfPage() {
                <button onClick={() => setMobileTab(0)} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors ${mobileTab === 0 ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}>{T.tab_preview[lang]}</button>
             </div>
 
-            {/* PREVIEW AREA (LEFT) */}
+            {/* PREVIEW AREA */}
             <div className={`flex-1 flex flex-col h-full bg-slate-100 md:bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 md:p-8 overflow-hidden relative ${mobileTab === 0 ? 'flex' : 'hidden md:flex'}`}>
                 <div className="flex justify-center mb-4 shrink-0 overflow-hidden px-4">
                    <div className="hidden md:block"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
@@ -366,19 +387,15 @@ export default function SignPdfPage() {
                         {/* DRAGGABLE SIGNATURE */}
                         {signatureImage && (
                             <div 
-                              // HANDLER DI SINI UNTUK START DRAG
                               onMouseDown={(e) => handleStartInteraction(e, 'drag')}
                               onTouchStart={(e) => handleStartInteraction(e, 'drag')}
                               className={`absolute group touch-none ${interactionMode === 'drag' ? 'cursor-grabbing' : 'cursor-grab'}`} 
                               style={{ 
-                                left: `${sigX}%`, 
-                                top: `${sigY}%`, 
-                                width: `${sigScale}%`, 
-                                transform: 'translate(-50%, -50%)', 
+                                left: `${sigX}%`, top: `${sigY}%`, 
+                                width: `${sigScale}%`, transform: 'translate(-50%, -50%)', 
                               }}
                             >
                                 <img src={signatureImage} alt="Sig" className="w-full border-2 border-dashed border-blue-400/0 group-hover:border-blue-400 rounded p-1 transition-all pointer-events-none" />
-                                {/* Resize Handle */}
                                 <div 
                                   onMouseDown={(e) => handleStartInteraction(e, 'resize')}
                                   onTouchStart={(e) => handleStartInteraction(e, 'resize')}
@@ -421,7 +438,11 @@ export default function SignPdfPage() {
                             ))}
                         </div>
                         <div className="flex-1">
-                            <input type="range" min="1" max="10" value={penWidth} onChange={(e) => setPenWidth(parseInt(e.target.value))} className="w-full accent-blue-600 h-1.5 bg-slate-200 rounded-full cursor-pointer" />
+                            <div className="flex justify-between mb-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">{T.lbl_width[lang]}</label>
+                                <span className="text-[10px] font-bold text-slate-600">{penWidth}px</span>
+                            </div>
+                            <input type="range" min="1" max="15" value={penWidth} onChange={(e) => setPenWidth(parseInt(e.target.value))} className="w-full accent-blue-600 h-1.5 bg-slate-200 rounded-full cursor-pointer" />
                         </div>
                     </div>
 
