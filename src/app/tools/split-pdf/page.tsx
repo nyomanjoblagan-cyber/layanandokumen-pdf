@@ -6,7 +6,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
 import { 
   Scissors, FileText, CheckCircle2, Download, Globe, 
-  X, ArrowLeft, Loader2, CheckSquare, Square, MousePointerClick, Info
+  X, ArrowLeft, Loader2, CheckSquare, Square, MousePointerClick, Info, Archive
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
@@ -20,11 +20,15 @@ export default function SplitPdfPage() {
   // STATE UTAMA
   const [file, setFile] = useState<File | null>(null);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
-  const [selectedPages, setSelectedPages] = useState<number[]>([]); // Halaman yang DIPILIH untuk DISIMPAN
+  const [selectedPages, setSelectedPages] = useState<number[]>([]); // Halaman yang DIPILIH
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
+  
+  // Hasil Akhir
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [resultType, setResultType] = useState<'pdf' | 'zip'>('pdf'); 
+  const [resultName, setResultName] = useState('');
 
   // UI & BAHASA
   const [lang, setLang] = useState<'id' | 'en'>('id');
@@ -47,17 +51,17 @@ export default function SplitPdfPage() {
 
   // --- 3. KAMUS ---
   const T = {
-    hero_title: { id: 'Pisahkan PDF (Ambil Halaman)', en: 'Split PDF (Extract Pages)' },
+    hero_title: { id: 'Pisah & Pecah PDF', en: 'Split & Burst PDF' },
     hero_desc: { 
-      id: 'Pilih halaman yang ingin Anda simpan sebagai PDF baru. Simpel dan visual, tanpa ketik angka.', 
-      en: 'Select the pages you want to save as a new PDF. Simple and visual, no typing required.' 
+      id: 'Ambil halaman tertentu jadi PDF baru, atau pecah semua halaman menjadi file terpisah (ZIP).', 
+      en: 'Extract specific pages into a new PDF, or burst all pages into separate files (ZIP).' 
     },
     select_btn: { id: 'Pilih File PDF', en: 'Select PDF File' },
     drop_text: { id: 'atau tarik file ke sini', en: 'or drop file here' },
     
     // Editor UI
-    preview_title: { id: 'Pilih Halaman Disimpan', en: 'Select Pages to Keep' },
-    selected_count: { id: 'halaman terpilih', en: 'pages selected' },
+    preview_title: { id: 'Pilih Halaman', en: 'Select Pages' },
+    selected_count: { id: 'halaman dipilih', en: 'pages selected' },
     
     // Actions
     btn_extract: { id: 'Simpan Pilihan (PDF)', en: 'Save Selected (PDF)' },
@@ -68,7 +72,7 @@ export default function SplitPdfPage() {
     deselect_all: { id: 'Reset', en: 'Reset' },
     
     // Info
-    info_text: { id: 'Klik halaman yang ingin Anda ambil. Halaman yang TIDAK dipilih akan dibuang.', en: 'Click pages you want to keep. Unselected pages will be discarded.' },
+    info_text: { id: 'Klik halaman yang ingin diambil. Tombol "Pecah Semua" akan memproses seluruh halaman.', en: 'Click pages to keep. "Split All" button will process the entire document.' },
 
     // Status
     processing: { id: 'MEMUAT...', en: 'LOADING...' },
@@ -111,12 +115,12 @@ export default function SplitPdfPage() {
         const totalPages = pdf.numPages;
         const thumbs: string[] = [];
 
-        // Limit preview max 50 halaman agar browser HP kuat
+        // Limit preview 50 halaman agar HP tidak crash
         const limit = Math.min(totalPages, 50); 
 
         for (let i = 1; i <= limit; i++) {
             const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 0.25 }); // Low res thumbnail
+            const viewport = page.getViewport({ scale: 0.3 }); // Resolusi thumbnail ringan
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             
@@ -128,7 +132,7 @@ export default function SplitPdfPage() {
             }
         }
         setThumbnails(thumbs);
-        setSelectedPages([]); // Default kosong
+        setSelectedPages([]); 
 
     } catch (error) {
         console.error(error);
@@ -144,6 +148,7 @@ export default function SplitPdfPage() {
     if (selectedPages.includes(index)) {
         setSelectedPages(selectedPages.filter(id => id !== index));
     } else {
+        // Urutkan agar halaman tidak acak-acakan
         setSelectedPages([...selectedPages, index].sort((a, b) => a - b));
     }
   };
@@ -153,7 +158,7 @@ export default function SplitPdfPage() {
 
   // --- 6. SPLIT ENGINE ---
   
-  // Opsi 1: Extract (Gabung halaman terpilih jadi 1 PDF)
+  // A. EXTRACT: Ambil halaman terpilih -> 1 PDF Baru
   const handleExtract = async () => {
     if (!file || selectedPages.length === 0) {
         alert(lang === 'id' ? "Pilih minimal 1 halaman." : "Select at least 1 page.");
@@ -173,7 +178,9 @@ export default function SplitPdfPage() {
         const pdfBytes = await newPdf.save();
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
+        
         setResultUrl(url);
+        setResultName(`Extracted_${file.name}`);
 
     } catch (error) {
         alert("Gagal memproses.");
@@ -182,7 +189,7 @@ export default function SplitPdfPage() {
     }
   };
 
-  // Opsi 2: Split All (Pecah semua halaman jadi ZIP)
+  // B. SPLIT ALL: Pecah SEMUA halaman -> ZIP
   const handleSplitAllToZip = async () => {
     if (!file) return;
     setIsSplitting(true);
@@ -194,17 +201,22 @@ export default function SplitPdfPage() {
         const totalPages = pdfDoc.getPageCount();
         const zip = new JSZip();
 
+        // Loop semua halaman
         for (let i = 0; i < totalPages; i++) {
             const newPdf = await PDFDocument.create();
             const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
             newPdf.addPage(copiedPage);
             const pdfBytes = await newPdf.save();
+            
+            // Nama file dalam ZIP: Page_1.pdf, Page_2.pdf, dst
             zip.file(`Page_${i + 1}.pdf`, pdfBytes);
         }
 
         const content = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(content);
+        
         setResultUrl(url);
+        setResultName(`${file.name.replace('.pdf', '')}_Split_All.zip`);
 
     } catch (error) {
         alert("Gagal membuat ZIP.");
@@ -228,14 +240,14 @@ export default function SplitPdfPage() {
       {/* NAVBAR */}
       <nav className="bg-white/90 backdrop-blur-md border-b border-slate-200 h-14 md:h-16 px-4 md:px-6 flex items-center justify-between sticky top-0 z-50 shrink-0 shadow-sm">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-blue-600 text-white p-1 md:p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><Scissors size={18} /></div>
+          <div className="bg-green-600 text-white p-1 md:p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><Scissors size={18} /></div>
           <span className="font-bold text-lg md:text-xl tracking-tight text-slate-900 italic uppercase">
-              <span className="md:hidden">Pisah<span className="text-blue-600">PDF</span></span>
-              <span className="hidden md:inline">Layanan<span className="text-blue-600">Dokumen</span> <span className="text-slate-300 font-black">PDF</span></span>
+              <span className="md:hidden">Split<span className="text-green-600">PDF</span></span>
+              <span className="hidden md:inline">Layanan<span className="text-green-600">Dokumen</span> <span className="text-slate-300 font-black">PDF</span></span>
           </span>
         </Link>
         <div className="flex items-center gap-2 md:gap-4">
-           <button onClick={toggleLang} className="flex items-center gap-1 font-bold bg-slate-100 px-2 py-1 rounded text-[10px] text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+           <button onClick={toggleLang} className="flex items-center gap-1 font-bold bg-slate-100 px-2 py-1 rounded text-[10px] text-slate-600 hover:bg-green-50 hover:text-green-600 transition-colors">
              <Globe size={12} /> {lang.toUpperCase()}
            </button>
            <Link href="/" className="text-[10px] md:text-xs font-bold text-slate-400 hover:text-red-500 uppercase tracking-[0.2em] transition-colors flex items-center gap-1">
@@ -249,7 +261,7 @@ export default function SplitPdfPage() {
         {/* STATE 1: LANDING */}
         {!file && (
           <div 
-            className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-all overflow-y-auto ${isDraggingOver ? 'bg-blue-50/50' : ''}`}
+            className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-all overflow-y-auto ${isDraggingOver ? 'bg-green-50/50' : ''}`}
             onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
             onDragLeave={() => setIsDraggingOver(false)}
             onDrop={handleDrop}
@@ -272,7 +284,7 @@ export default function SplitPdfPage() {
                     <div className="flex flex-col items-center gap-6 py-4">
                         <button 
                           onClick={() => fileInputRef.current?.click()}
-                          className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white text-lg md:text-xl font-bold py-5 md:py-6 px-10 md:px-16 rounded-xl shadow-xl shadow-blue-200 hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3"
+                          className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white text-lg md:text-xl font-bold py-5 md:py-6 px-10 md:px-16 rounded-xl shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3"
                         >
                            {isProcessing ? <Loader2 className="animate-spin" size={24}/> : <Scissors size={24} />} 
                            {isProcessing ? T.processing[lang] : T.select_btn[lang]}
@@ -293,18 +305,20 @@ export default function SplitPdfPage() {
           </div>
         )}
 
-        {/* STATE 2: SUCCESS */}
+        {/* STATE 2: SUCCESS / DOWNLOAD */}
         {resultUrl && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-white overflow-y-auto">
              <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
                 <div className="hidden xl:block sticky top-20">
                    <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
                 </div>
+                
                 <div className="flex-1 max-w-xl space-y-8 animate-in slide-in-from-bottom duration-500">
                     <div className="mb-8">
                        <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
                     </div>
-                    <div className="bg-white border border-slate-200 rounded-3xl p-10 shadow-2xl shadow-blue-100 text-center">
+                    
+                    <div className="bg-white border border-slate-200 rounded-3xl p-10 shadow-2xl shadow-green-100 text-center">
                         <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
                            <CheckCircle2 size={40} strokeWidth={3} />
                         </div>
@@ -312,18 +326,21 @@ export default function SplitPdfPage() {
                         <p className="text-slate-500 font-medium mb-8 leading-relaxed">{T.success_desc[lang]}</p>
                         
                         <div className="flex flex-col gap-4">
-                           <a href={resultUrl} download={resultType === 'zip' ? `Split_${file?.name}.zip` : `Extracted_${file?.name}`} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer">
-                              <Download size={24} /> {T.download_btn[lang]} {resultType === 'zip' ? '(ZIP)' : '(PDF)'}
+                           <a href={resultUrl} download={resultName} className="w-full bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer">
+                              {resultType === 'zip' ? <Archive size={24}/> : <Download size={24}/>} 
+                              {T.download_btn[lang]} {resultType === 'zip' ? '(ZIP)' : '(PDF)'}
                            </a>
                            <button onClick={resetAll} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider">
                               <ArrowLeft size={16} /> {T.back_home[lang]}
                            </button>
                         </div>
                     </div>
+                    
                     <div className="mt-10 flex justify-center">
                        <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
                     </div>
                 </div>
+                
                 <div className="hidden xl:block sticky top-20">
                    <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
                 </div>
@@ -346,10 +363,10 @@ export default function SplitPdfPage() {
                     <div className="flex items-center gap-4">
                         <div>
                             <h3 className="font-bold text-sm md:text-lg text-slate-800 flex items-center gap-2">
-                               <MousePointerClick className="text-blue-500" size={20}/> {T.preview_title[lang]}
+                               <MousePointerClick className="text-green-600" size={20}/> {T.preview_title[lang]}
                             </h3>
                             <p className="text-[10px] md:text-xs text-slate-400 font-bold mt-1">
-                                <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{selectedPages.length}</span> {T.selected_count[lang]}
+                                <span className="text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{selectedPages.length}</span> {T.selected_count[lang]}
                             </p>
                         </div>
                     </div>
@@ -364,12 +381,12 @@ export default function SplitPdfPage() {
                          
                          {/* Desktop Buttons */}
                          <div className="hidden md:flex gap-2">
-                             <button onClick={handleExtract} disabled={selectedPages.length === 0 || isSplitting} className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-blue-200 active:scale-95 transition-all flex items-center gap-2">
+                             <button onClick={handleExtract} disabled={selectedPages.length === 0 || isSplitting} className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-green-200 active:scale-95 transition-all flex items-center gap-2">
                                 {isSplitting ? <Loader2 className="animate-spin" size={16}/> : <FileText size={16}/>}
                                 {T.btn_extract[lang]}
                              </button>
                              <button onClick={handleSplitAllToZip} disabled={isSplitting} className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center gap-2">
-                                {isSplitting ? <Loader2 className="animate-spin" size={16}/> : <Download size={16}/>}
+                                {isSplitting ? <Loader2 className="animate-spin" size={16}/> : <Archive size={16}/>}
                                 {T.btn_split_all[lang]}
                              </button>
                          </div>
@@ -379,9 +396,9 @@ export default function SplitPdfPage() {
                 {/* GRID CONTENT */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 pb-32 md:pb-6">
                     {/* INFO BOX */}
-                    <div className="mb-4 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-                        <Info className="text-blue-600 shrink-0 mt-0.5" size={20} />
-                        <div className="text-xs md:text-sm text-blue-700 font-medium">
+                    <div className="mb-4 bg-green-50 border border-green-100 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+                        <Info className="text-green-600 shrink-0 mt-0.5" size={20} />
+                        <div className="text-xs md:text-sm text-green-700 font-medium">
                             {T.info_text[lang]}
                         </div>
                     </div>
@@ -390,15 +407,15 @@ export default function SplitPdfPage() {
                         {thumbnails.map((thumb, idx) => {
                             const isSelected = selectedPages.includes(idx);
                             return (
-                                <div key={idx} onClick={() => togglePage(idx)} className={`group relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 transform md:hover:scale-[1.02] ${isSelected ? 'border-blue-500 shadow-lg shadow-blue-100 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300 opacity-60 hover:opacity-100'}`}>
+                                <div key={idx} onClick={() => togglePage(idx)} className={`group relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 transform md:hover:scale-[1.02] ${isSelected ? 'border-green-500 shadow-lg shadow-green-100 ring-2 ring-green-200' : 'border-slate-200 hover:border-green-300 opacity-60 hover:opacity-100'}`}>
                                     <div className="aspect-[3/4] bg-white">
                                         <img src={thumb} alt={`page ${idx}`} className="w-full h-full object-contain" />
                                     </div>
-                                    <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-all ${isSelected ? 'bg-blue-600 text-white scale-110' : 'bg-slate-200 text-slate-400'}`}>
+                                    <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-all ${isSelected ? 'bg-green-600 text-white scale-110' : 'bg-slate-200 text-slate-400'}`}>
                                         {isSelected ? <CheckSquare size={14}/> : idx + 1}
                                     </div>
-                                    <div className={`absolute bottom-0 inset-x-0 py-1 text-center text-[8px] md:text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 border-t border-slate-200'}`}>
-                                        {isSelected ? 'SIMPAN' : 'BUANG'}
+                                    <div className={`absolute bottom-0 inset-x-0 py-1 text-center text-[8px] md:text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-400 border-t border-slate-200'}`}>
+                                        {isSelected ? 'AMBIL' : 'BUANG'}
                                     </div>
                                 </div>
                             );
@@ -415,9 +432,9 @@ export default function SplitPdfPage() {
             {/* FAB Mobile (Fixed Bottom) */}
             <div className="md:hidden fixed bottom-0 inset-x-0 p-4 bg-white border-t border-slate-200 z-50 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <button onClick={handleSplitAllToZip} disabled={isSplitting} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs flex flex-col items-center gap-1 active:scale-95 transition-transform">
-                    <Download size={18}/> {T.btn_split_all[lang]}
+                    <Archive size={18}/> {T.btn_split_all[lang]}
                 </button>
-                <button onClick={handleExtract} disabled={selectedPages.length === 0 || isSplitting} className="flex-[2] py-3 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-200 flex flex-col items-center gap-1 active:scale-95 transition-transform disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">
+                <button onClick={handleExtract} disabled={selectedPages.length === 0 || isSplitting} className="flex-[2] py-3 rounded-xl bg-green-600 text-white font-bold text-sm shadow-lg shadow-green-200 flex flex-col items-center gap-1 active:scale-95 transition-transform disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">
                     {isSplitting ? <Loader2 className="animate-spin" size={18}/> : <FileText size={18}/>}
                     {T.btn_extract[lang]}
                 </button>
