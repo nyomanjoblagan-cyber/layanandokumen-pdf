@@ -103,10 +103,20 @@ export default function PdfToTextPage() {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
             
-            // Menggabungkan item teks
-            const pageText = textContent.items
-                .map((item: any) => item.str)
-                .join(' ');
+            // Logika Gabung Teks yang Lebih Cerdas
+            // Menambahkan baris baru jika posisi Y item berubah
+            let pageText = '';
+            let lastY = -1;
+
+            textContent.items.forEach((item: any) => {
+                const currentY = item.transform[5]; // Posisi Y
+                // Jika beda baris cukup jauh, tambah enter
+                if (lastY !== -1 && Math.abs(currentY - lastY) > 5) {
+                    pageText += '\n';
+                }
+                pageText += item.str + ' ';
+                lastY = currentY;
+            });
             
             fullText += `--- Page ${i} ---\n\n${pageText}\n\n`;
         }
