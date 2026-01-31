@@ -340,10 +340,10 @@ export default function Home() {
                 </div>
             ) : (
                 <>
-                    <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
                     {UI_TEXT.hero_title[lang]}
                     </h1>
-                    <p className="text-slate-600 text-base md:text-lg leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
+                    <p className="text-slate-600 text-sm md:text-base leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
                     {UI_TEXT.hero_desc[lang]}
                     </p>
                     
