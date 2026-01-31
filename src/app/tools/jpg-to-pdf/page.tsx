@@ -94,7 +94,10 @@ export default function JpgToPdfPage() {
   };
 
   const removeFile = (id: string) => {
-    setFiles(prev => prev.filter(f => f.id !== id));
+    setFiles(prev => {
+      const newFiles = prev.filter(f => f.id !== id);
+      return newFiles;
+    });
   };
 
   // --- 4. DRAG & DROP REORDER ---
@@ -153,19 +156,25 @@ export default function JpgToPdfPage() {
             let imageBytes: ArrayBuffer;
             let embeddedImage;
 
-            // Logika Kompresi
+            // Logika Kompresi & Embed
             if (quality === 'original') {
-               // Pakai file asli (Cepat)
+               // Coba embed langsung dulu
                imageBytes = await fileObj.file.arrayBuffer();
+               
                try {
                    if (fileObj.file.type === 'image/png') {
-                       embeddedImage = await pdfDoc.embedPng(imageBytes);
+                       try {
+                           embeddedImage = await pdfDoc.embedPng(imageBytes);
+                       } catch (pngErr) {
+                           console.warn("PNG embed gagal, convert ke JPEG...");
+                           imageBytes = await compressImage(fileObj.file, 0.95);
+                           embeddedImage = await pdfDoc.embedJpg(imageBytes);
+                       }
                    } else {
                        embeddedImage = await pdfDoc.embedJpg(imageBytes);
                    }
                } catch (err) {
-                   console.error("Gagal embed (Original), coba re-encode...", err);
-                   // Fallback: Kalau corrupt/unsupported/PNG transparan bermasalah, paksa re-encode via canvas
+                   console.error("Embed error, fallback ke canvas:", err);
                    imageBytes = await compressImage(fileObj.file, 0.9);
                    embeddedImage = await pdfDoc.embedJpg(imageBytes);
                }
@@ -177,11 +186,20 @@ export default function JpgToPdfPage() {
             }
 
             // Hitung Ukuran Halaman (A4)
-            const A4_W = 595.28;
-            const A4_H = 841.89;
+            const A4_W = 595.28;  // Portrait width
+            const A4_H = 841.89;  // Portrait height
             const pageWidth = orientation === 'portrait' ? A4_W : A4_H;
             const pageHeight = orientation === 'portrait' ? A4_H : A4_W;
             
+            // Debug log
+            console.log(`Image ${i+1}:`, {
+              orientation,
+              pageWidth,
+              pageHeight,
+              imgWidth: embeddedImage.width,
+              imgHeight: embeddedImage.height
+            });
+
             const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
             // Hitung Skala & Posisi
@@ -199,16 +217,23 @@ export default function JpgToPdfPage() {
         }
         
         const pdfBytes = await pdfDoc.save();
-        // Fix Blob Type
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         setPdfUrl(URL.createObjectURL(blob));
         setProgress(100);
     } catch (e) { 
-        alert("Gagal memproses. Coba kurangi jumlah foto."); 
+        console.error("Conversion error:", e);
+        alert("Gagal memproses. Coba kurangi jumlah foto atau periksa format gambar."); 
     } finally { 
         setIsProcessing(false); 
     }
   };
+
+  // Cleanup preview URLs
+  useEffect(() => {
+    return () => {
+      files.forEach(f => URL.revokeObjectURL(f.preview));
+    };
+  }, [files]);
 
   if (!isLoaded) return null;
 
@@ -229,6 +254,15 @@ export default function JpgToPdfPage() {
       </nav>
 
       <main className="flex-1 flex flex-col h-[calc(100vh-64px)] overflow-hidden relative">
+        {/* INPUT FILE YANG BISA DIAKSES DARI SEMUA VIEW */}
+        <input 
+          type="file" 
+          multiple 
+          accept="image/jpeg,image/png,image/webp" 
+          ref={fileInputRef} 
+          onChange={handleFileChange} 
+          className="hidden" 
+        />
         
         {/* VIEW 1: UPLOAD */}
         {files.length === 0 ? (
@@ -240,11 +274,13 @@ export default function JpgToPdfPage() {
                 e.preventDefault();
                 setIsDraggingOver(false);
                 if (e.dataTransfer.files) {
-                    const newFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')).map(f => ({
-                        id: `jpg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                        file: f,
-                        preview: URL.createObjectURL(f)
-                    }));
+                    const newFiles = Array.from(e.dataTransfer.files)
+                      .filter(f => f.type.startsWith('image/'))
+                      .map(f => ({
+                          id: `jpg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                          file: f,
+                          preview: URL.createObjectURL(f)
+                      }));
                     setFiles(prev => [...prev, ...newFiles]);
                 }
             }}
@@ -261,14 +297,16 @@ export default function JpgToPdfPage() {
                     </div>
 
                     <div className="flex flex-col items-center gap-6">
-                        <button onClick={() => fileInputRef.current?.click()} className="group relative bg-orange-600 hover:bg-orange-700 text-white text-lg font-bold py-5 px-16 rounded-2xl shadow-xl shadow-orange-200 transition-all active:scale-95 flex items-center justify-center gap-3 mx-auto uppercase tracking-widest">
+                        <button 
+                          onClick={() => fileInputRef.current?.click()} 
+                          className="group relative bg-orange-600 hover:bg-orange-700 text-white text-lg font-bold py-5 px-16 rounded-2xl shadow-xl shadow-orange-200 transition-all active:scale-95 flex items-center justify-center gap-3 mx-auto uppercase tracking-widest"
+                        >
                            <ImagePlus size={24} /> {T.select_btn[lang]}
                         </button>
                         <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">{T.drop_text[lang]}</p>
                     </div>
                     
                     <div className="flex justify-center mt-8"><AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" /></div>
-                    <input type="file" multiple accept="image/jpeg,image/png" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                  </div>
 
                 <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
@@ -309,7 +347,7 @@ export default function JpgToPdfPage() {
                <button onClick={() => setMobileTab(1)} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors ${mobileTab === 1 ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-400'}`}>{T.tab_settings[lang]}</button>
             </div>
 
-            {/* GRID AREA (LEFT) */}
+            {/* GRID AREA (Left) */}
             <div className={`flex-1 flex flex-col h-full bg-slate-100 md:bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 md:p-8 overflow-hidden relative ${mobileTab === 0 ? 'flex' : 'hidden md:flex'}`}>
                 {/* ADS TOP */}
                 <div className="flex justify-center mb-4 shrink-0 overflow-hidden px-4">
@@ -335,9 +373,17 @@ export default function JpgToPdfPage() {
                                         </Draggable>
                                     ))}
                                     {prov.placeholder}
-                                    <div onClick={() => fileInputRef.current?.click()} className="aspect-[3/4] border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white hover:border-orange-400 transition-all text-slate-400 group">
-                                        <div className="p-3 bg-slate-100 rounded-full group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors"><Plus size={24}/></div>
-                                        <span className="text-[10px] font-bold uppercase tracking-widest">{T.btn_add[lang]}</span>
+                                    {/* TOMBOL TAMBAH GAMBAR */}
+                                    <div 
+                                      onClick={() => fileInputRef.current?.click()} 
+                                      className="aspect-[3/4] border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white hover:border-orange-400 transition-all text-slate-400 group"
+                                    >
+                                        <div className="p-3 bg-slate-100 rounded-full group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors">
+                                          <Plus size={24}/>
+                                        </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest">
+                                          {T.btn_add[lang]}
+                                        </span>
                                     </div>
                                 </div>
                             )}
@@ -352,7 +398,7 @@ export default function JpgToPdfPage() {
                 </div>
             </div>
 
-            {/* SIDEBAR (RIGHT) */}
+            {/* SIDEBAR (Right) */}
             <div className={`w-full md:w-80 bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 p-6 overflow-y-auto shrink-0 ${mobileTab === 1 ? 'block' : 'hidden md:block'}`}>
                 <h3 className="font-black text-[10px] text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2"><Settings2 size={14}/> {T.tab_settings[lang]}</h3>
                 
@@ -361,20 +407,43 @@ export default function JpgToPdfPage() {
                     <div>
                         <label className="text-[10px] font-black text-slate-500 block mb-2 uppercase tracking-widest">{T.label_orient[lang]}</label>
                         <div className="flex gap-2">
-                           <button onClick={() => setOrientation('portrait')} className={`flex-1 p-3 rounded-xl border-2 text-[10px] font-bold transition-all uppercase tracking-wider ${orientation === 'portrait' ? 'border-orange-600 bg-orange-50 text-orange-600' : 'border-slate-100 text-slate-400 hover:border-orange-200'}`}>Portrait</button>
-                           <button onClick={() => setOrientation('landscape')} className={`flex-1 p-3 rounded-xl border-2 text-[10px] font-bold transition-all uppercase tracking-wider ${orientation === 'landscape' ? 'border-orange-600 bg-orange-50 text-orange-600' : 'border-slate-100 text-slate-400 hover:border-orange-200'}`}>Landscape</button>
+                           <button 
+                             onClick={() => setOrientation('portrait')} 
+                             className={`flex-1 p-3 rounded-xl border-2 text-[10px] font-bold transition-all uppercase tracking-wider ${orientation === 'portrait' ? 'border-orange-600 bg-orange-50 text-orange-600' : 'border-slate-100 text-slate-400 hover:border-orange-200'}`}
+                           >
+                             Portrait
+                           </button>
+                           <button 
+                             onClick={() => setOrientation('landscape')} 
+                             className={`flex-1 p-3 rounded-xl border-2 text-[10px] font-bold transition-all uppercase tracking-wider ${orientation === 'landscape' ? 'border-orange-600 bg-orange-50 text-orange-600' : 'border-slate-100 text-slate-400 hover:border-orange-200'}`}
+                           >
+                             Landscape
+                           </button>
                         </div>
                     </div>
 
                     {/* MARGIN */}
                     <div>
-                        <div className="flex justify-between text-[10px] font-black text-slate-500 mb-2 uppercase tracking-widest"><span>{T.label_margin[lang]}</span><span>{margin}px</span></div>
-                        <input type="range" min="0" max="100" step="10" value={margin} onChange={(e) => setMargin(parseInt(e.target.value))} className="w-full accent-orange-600 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer" />
+                        <div className="flex justify-between text-[10px] font-black text-slate-500 mb-2 uppercase tracking-widest">
+                          <span>{T.label_margin[lang]}</span>
+                          <span>{margin}px</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          step="10" 
+                          value={margin} 
+                          onChange={(e) => setMargin(parseInt(e.target.value))} 
+                          className="w-full accent-orange-600 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer" 
+                        />
                     </div>
 
-                    {/* KUALITAS (BARU) */}
+                    {/* QUALITY */}
                     <div>
-                        <label className="text-[10px] font-black text-slate-500 block mb-2 uppercase tracking-widest flex items-center gap-2"><BarChart3 size={12}/> {T.label_quality[lang]}</label>
+                        <label className="text-[10px] font-black text-slate-500 block mb-2 uppercase tracking-widest flex items-center gap-2">
+                          <BarChart3 size={12}/> {T.label_quality[lang]}
+                        </label>
                         <div className="flex flex-col gap-2">
                            <button onClick={() => setQuality('original')} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${quality === 'original' ? 'bg-orange-50 border-orange-500 text-orange-700' : 'bg-white border-slate-200 text-slate-500'}`}>
                               <span className="text-xs font-bold uppercase">{T.q_original[lang]}</span>
@@ -396,8 +465,22 @@ export default function JpgToPdfPage() {
                         <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
                     </div>
 
-                    <button onClick={handleConvert} disabled={isProcessing || files.length === 0} className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 disabled:text-slate-400 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 mt-4 uppercase text-xs tracking-widest">
-                        {isProcessing ? <div className="flex items-center gap-2"><Loader2 className="animate-spin" size={18}/> {progress}%</div> : <><FileText size={18}/> {T.btn_save[lang]}</>}
+                    <button 
+                      onClick={handleConvert} 
+                      disabled={isProcessing || files.length === 0} 
+                      className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 disabled:text-slate-400 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 mt-4 uppercase text-xs tracking-widest"
+                    >
+                        {isProcessing ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="animate-spin" size={18}/> 
+                            {progress}%
+                          </div>
+                        ) : (
+                          <>
+                            <FileText size={18}/> 
+                            {T.btn_save[lang]}
+                          </>
+                        )}
                     </button>
                 </div>
             </div>
