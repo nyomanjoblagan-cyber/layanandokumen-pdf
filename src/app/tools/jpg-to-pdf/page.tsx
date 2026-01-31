@@ -165,7 +165,7 @@ export default function JpgToPdfPage() {
                    }
                } catch (err) {
                    console.error("Gagal embed (Original), coba re-encode...", err);
-                   // Fallback: Kalau corrupt/unsupported, paksa re-encode via canvas
+                   // Fallback: Kalau corrupt/unsupported/PNG transparan bermasalah, paksa re-encode via canvas
                    imageBytes = await compressImage(fileObj.file, 0.9);
                    embeddedImage = await pdfDoc.embedJpg(imageBytes);
                }
@@ -223,7 +223,7 @@ export default function JpgToPdfPage() {
         <div className="flex items-center gap-4">
            <button onClick={toggleLang} className="text-[10px] font-bold px-3 py-1.5 bg-slate-100 rounded-lg hover:bg-slate-200 transition-all uppercase tracking-widest text-slate-600">{lang}</button>
            <Link href="/" className="flex items-center gap-2 text-xs font-bold text-red-400 hover:text-red-500 transition-colors bg-red-50 px-4 py-2 rounded-lg border border-slate-100">
-              <X size={16} /> {T.cancel[lang]}
+             <X size={16} /> {T.cancel[lang]}
            </Link>
         </div>
       </nav>
