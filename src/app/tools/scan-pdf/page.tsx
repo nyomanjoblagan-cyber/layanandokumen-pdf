@@ -12,7 +12,7 @@ import AdsterraBanner from '@/components/AdsterraBanner';
 
 export default function ScanPdfPage() {
   // STATE UTAMA
-  const [files, setFiles] = useState<{id: string, file: File, preview: string, filter: string}[]>([]);
+  const [files, setFiles] = useState<{id: string, file: File, preview: string}[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   
@@ -71,7 +71,6 @@ export default function ScanPdfPage() {
         id: `scan-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         file: f,
         preview: URL.createObjectURL(f),
-        filter: globalFilter
       }));
       setFiles(prev => [...prev, ...newFiles]);
     }
@@ -106,46 +105,48 @@ export default function ScanPdfPage() {
         const pdfDoc = await PDFDocument.create();
         
         for (const fileObj of files) {
-            // Proses Filter via Canvas
+            // Proses Filter via Canvas (Wajib agar efek B&W tersimpan di PDF)
             await new Promise<void>((resolve) => {
                 const img = new Image();
                 img.onload = async () => {
                     const canvas = document.createElement('canvas');
                     canvas.width = img.width;
                     canvas.height = img.height;
-                    const ctx = canvas.getContext('2d')!;
+                    const ctx = canvas.getContext('2d');
                     
-                    // Apply Filter
-                    if (globalFilter === 'grayscale') {
-                        ctx.filter = 'grayscale(100%) contrast(120%) brightness(110%)';
-                    } else if (globalFilter === 'contrast') {
-                        ctx.filter = 'contrast(150%) brightness(110%) saturate(0)';
+                    if (ctx) {
+                        // Apply Filter (Sama dengan CSS preview)
+                        if (globalFilter === 'grayscale') {
+                            ctx.filter = 'grayscale(100%) contrast(120%) brightness(110%)';
+                        } else if (globalFilter === 'contrast') {
+                            ctx.filter = 'contrast(150%) brightness(110%) saturate(0)';
+                        }
+                        
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        // Convert Canvas to Blob/Buffer
+                        const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                        const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
+                        
+                        const embedded = await pdfDoc.embedJpg(imgBytes);
+                        
+                        // A4 Standard
+                        const page = pdfDoc.addPage([595.28, 841.89]);
+                        const { width, height } = page.getSize();
+                        
+                        // Fit Image (Margin 20)
+                        const availW = width - 40;
+                        const availH = height - 40;
+                        const scale = Math.min(availW / embedded.width, availH / embedded.height);
+                        const dims = embedded.scale(scale);
+                        
+                        page.drawImage(embedded, {
+                            x: (width - dims.width) / 2,
+                            y: (height - dims.height) / 2,
+                            width: dims.width,
+                            height: dims.height
+                        });
                     }
-                    
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    // Convert Canvas to Blob/Buffer
-                    const imgData = canvas.toDataURL('image/jpeg', 0.75);
-                    const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
-                    
-                    const embedded = await pdfDoc.embedJpg(imgBytes);
-                    
-                    // A4 Standard
-                    const page = pdfDoc.addPage([595.28, 841.89]);
-                    const { width, height } = page.getSize();
-                    
-                    // Fit Image (Margin 20)
-                    const availW = width - 40;
-                    const availH = height - 40;
-                    const scale = Math.min(availW / embedded.width, availH / embedded.height);
-                    const dims = embedded.scale(scale);
-                    
-                    page.drawImage(embedded, {
-                        x: (width - dims.width) / 2,
-                        y: (height - dims.height) / 2,
-                        width: dims.width,
-                        height: dims.height
-                    });
                     resolve();
                 };
                 img.src = fileObj.preview;
@@ -153,7 +154,6 @@ export default function ScanPdfPage() {
         }
         
         const pdfBytes = await pdfDoc.save();
-        // Fix Blob Type Error
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         setPdfUrl(URL.createObjectURL(blob));
 
@@ -177,7 +177,7 @@ export default function ScanPdfPage() {
         <div className="flex items-center gap-4">
            <button onClick={toggleLang} className="text-[10px] font-bold px-3 py-1.5 bg-slate-100 rounded-lg hover:bg-slate-200 transition-all uppercase tracking-widest text-slate-600">{lang}</button>
            <Link href="/" className="flex items-center gap-2 text-xs font-bold text-red-400 hover:text-red-500 transition-colors bg-red-50 px-4 py-2 rounded-lg border border-slate-100">
-              <X size={16} /> {T.cancel[lang]}
+             <X size={16} /> {T.cancel[lang]}
            </Link>
         </div>
       </nav>
@@ -199,12 +199,12 @@ export default function ScanPdfPage() {
                     </div>
 
                     <div className="flex flex-col md:flex-row justify-center gap-4 py-4 w-full max-w-md mx-auto">
-                       <button onClick={() => cameraInputRef.current?.click()} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
-                          <Camera size={20} /> {T.btn_cam[lang]}
-                       </button>
-                       <button onClick={() => fileInputRef.current?.click()} className="flex-1 bg-white border-2 border-slate-200 hover:border-blue-400 text-slate-600 font-bold py-4 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2">
-                          <ImagePlus size={20} /> {T.btn_gal[lang]}
-                       </button>
+                        <button onClick={() => cameraInputRef.current?.click()} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                           <Camera size={20} /> {T.btn_cam[lang]}
+                        </button>
+                        <button onClick={() => fileInputRef.current?.click()} className="flex-1 bg-white border-2 border-slate-200 hover:border-blue-400 text-slate-600 font-bold py-4 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                           <ImagePlus size={20} /> {T.btn_gal[lang]}
+                        </button>
                     </div>
                     
                     <div className="flex justify-center mt-8"><AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" /></div>
