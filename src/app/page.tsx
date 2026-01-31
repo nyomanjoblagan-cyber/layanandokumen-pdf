@@ -7,7 +7,7 @@ import {
   Scissors, Combine, RefreshCcw, Image, Lock, Unlock, PenTool, 
   Minimize, Layers, Trash2, FileSignature, BookOpen, FileImage, 
   BadgeCheck, Maximize, FileUp, Camera, FilePenLine, Stamp, 
-  Layout, FileCode, ExternalLink, Zap, Star
+  Layout, FileCode, ExternalLink, Zap, Star, SearchX
 } from 'lucide-react';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
@@ -15,7 +15,6 @@ import AdsterraBanner from '@/components/AdsterraBanner';
 type Language = 'id' | 'en';
 
 // --- DATA TOOLS ---
-// (Data tools tetap sama seperti sebelumnya, tidak ada perubahan di sini)
 const TOOLS = [
   // 1. POPULER
   { id: 'jpg-to-pdf', title: { id: 'JPG ke PDF', en: 'JPG to PDF' }, desc: { id: 'Ubah file gambar menjadi dokumen PDF.', en: 'Convert image files to PDF documents.' }, icon: Image, category: 'Populer', color: 'text-orange-600', bg: 'bg-orange-50', border_hover: 'hover:border-orange-300' },
@@ -61,18 +60,14 @@ const TAB_CATEGORIES = [
 const UI_TEXT = {
   brand: { id: 'LayananPDF', en: 'PDFServices' },
   home: { id: 'Beranda', en: 'Home' },
-  tools_menu: { id: 'Alat', en: 'Tools' },
-  
   hero_title: { id: 'Kelola Dokumen PDF Jadi Mudah', en: 'Manage PDF Documents Easily' },
   hero_desc: { id: 'Platform lengkap untuk mengubah, mengedit, dan mengatur file PDF Anda. Tanpa instalasi, gratis, dan aman karena file diproses di browser Anda.', en: 'Complete platform to convert, edit, and organize your PDF files. No installation, free, and secure as files are processed in your browser.' },
-  
   search_placeholder: { id: 'Cari alat (misal: Gabung, JPG)...', en: 'Search tools (e.g. Merge, JPG)...' },
   no_result: { id: 'Alat tidak ditemukan', en: 'No tools found' },
   most_used: { id: 'Sering Digunakan', en: 'Quick Access' },
-  
+  search_result_hero: { id: 'Hasil Pencarian', en: 'Search Results' },
   sponsored: { id: 'Iklan', en: 'Ad' },
   change_lang: { id: 'Bahasa', en: 'Language' },
-  
   promo_title: { id: 'Layanan Kami Lainnya', en: 'Our Other Services' },
   footer_desc: { id: 'LayananPDF menyediakan alat produktivitas dokumen yang aman, cepat, dan gratis untuk semua orang.', en: 'LayananPDF provides secure, fast, and free document productivity tools for everyone.' },
   footer_links: { id: 'Tautan', en: 'Links' },
@@ -100,7 +95,7 @@ const OTHER_WEBSITES = [
   }
 ];
 
-// --- SKELETON COMPONENT (High Priority Fix) ---
+// --- SKELETON COMPONENT ---
 const ToolCardSkeleton = () => (
   <div className="h-[180px] p-5 rounded-xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between relative animate-pulse">
     <div>
@@ -125,16 +120,13 @@ export default function Home() {
   useEffect(() => {
     const saved = localStorage.getItem('user-lang') as Language;
     if (saved) setLang(saved);
-    // Simulasi loading sebentar agar skeleton terlihat (opsional, bisa dihapus setTimeout-nya)
     setTimeout(() => setIsLoaded(true), 300); 
   }, []);
 
-  // --- FIX: REMOVED window.location.reload() (High Priority Fix) ---
   const toggleLang = () => {
     const newLang = lang === 'id' ? 'en' : 'id';
     setLang(newLang);
     localStorage.setItem('user-lang', newLang);
-    // Tidak perlu reload, React akan re-render otomatis
   };
 
   const getTool = (id: string) => TOOLS.find(t => t.id === id);
@@ -143,6 +135,7 @@ export default function Home() {
   const compressTool = getTool('compress-pdf');
   const splitTool = getTool('split-pdf');
 
+  // Filter Logic
   const filteredTools = TOOLS.filter(tool => {
     const title = tool.title[lang].toLowerCase();
     const desc = tool.desc[lang].toLowerCase();
@@ -153,69 +146,75 @@ export default function Home() {
     return matchesSearch && matchesTab;
   });
 
+  // --- LOGIC SEARCH RESULT (Quick Access Area) ---
+  const quickAccessTools = search 
+    ? filteredTools.slice(0, 6) 
+    : [jpgTool, mergeTool, compressTool, splitTool].filter(t => t);
+
+  // Render Grid
   const renderGridItems = () => {
     const items: React.ReactNode[] = [];
     const tools = [...filteredTools];
-    let toolsRenderedCount = 0;
+    let toolIndex = 0;
     
-    tools.forEach((tool) => {
-      // --- IMPROVED AD LOGIC (Medium Priority Fix) ---
-      // Sisipkan iklan setiap 6 tools yang ditampilkan
-      if (activeTab === 'All' && !search && toolsRenderedCount > 0 && toolsRenderedCount % 6 === 0) {
-        items.push(
-            <aside key={`ad-slot-${toolsRenderedCount}`} className="h-[180px] col-span-2 md:col-span-1 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center relative overflow-hidden">
-                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[9px] font-bold text-slate-400 uppercase tracking-wider z-10">{UI_TEXT.sponsored[lang]}</div>
-                <div className="scale-75 origin-center z-10 opacity-80 hover:opacity-100 transition-opacity">
-                <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
-                </div>
-            </aside>
-        );
+    while (toolIndex < tools.length) {
+      const currentSlot = items.length; 
+      
+      // IKLAN KEMBALI KE POSISI SEMULA (4, 10, 16, 22)
+      if (activeTab === 'All' && !search) {
+         if (currentSlot === 4 || currentSlot === 10 || currentSlot === 16 || currentSlot === 22) {
+            items.push(
+              <div key={`ad-slot-${currentSlot}`} className="h-[180px] col-span-2 md:col-span-1 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center relative overflow-hidden">
+                 <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-slate-200 rounded text-[9px] font-bold text-slate-500 uppercase tracking-wider z-10">{UI_TEXT.sponsored[lang]}</div>
+                 <div className="scale-75 origin-center z-10">
+                    <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
+                 </div>
+              </div>
+            );
+            continue;
+         }
       }
 
-      // --- VISUAL UPDATE: TEXTURED & FILLED CARDS ---
+      const tool = tools[toolIndex];
       items.push(
-        <article key={tool.id} className="block h-[180px]">
-          <Link href={`/tools/${tool.id}`} className="h-full">
-          <div className={`group h-full p-5 rounded-xl bg-white border border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 flex flex-col justify-between relative cursor-pointer overflow-hidden ${tool.border_hover}
-                          /* Tambahan: Subtle gradient background agar tidak putih polos */
-                          bg-gradient-to-br from-white to-slate-50/30
-                          `}>
+        <Link href={`/tools/${tool.id}`} key={tool.id} className="block h-[180px]">
+          <div className={`group h-full p-5 rounded-xl bg-white border border-slate-200 hover:shadow-lg transition-all duration-300 flex flex-col justify-between relative cursor-pointer overflow-hidden ${tool.border_hover} bg-gradient-to-br from-white to-slate-50`}>
             
-            {/* Tambahan: Ikon dekoratif transparan di background saat hover */}
-            <tool.icon className={`absolute -bottom-4 -right-4 w-20 h-20 opacity-0 group-hover:opacity-[0.04] transition-opacity duration-500 ${tool.color}`} />
+            {/* --- DEKORASI: IKON BESAR TRANSPARAN --- */}
+            <div className="absolute -bottom-4 -right-4 pointer-events-none">
+                <tool.icon className={`w-24 h-24 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-300 ${tool.color}`} />
+            </div>
 
-            <div>
-              <div className="flex items-start justify-between mb-3 relative z-10">
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-3">
                   <div className={`w-10 h-10 flex items-center justify-center rounded-lg shadow-sm ${tool.bg} ${tool.color} group-hover:scale-105 transition-transform`}>
                     <tool.icon className="w-5 h-5" strokeWidth={2} />
                   </div>
                   <ArrowRight size={16} className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-transform" />
               </div>
-              <h3 className="font-bold text-base text-slate-900 mb-1 group-hover:text-blue-700 transition-colors relative z-10">{tool.title[lang]}</h3>
-              <p className="text-xs text-slate-600 leading-relaxed line-clamp-2 relative z-10 font-medium">{tool.desc[lang]}</p>
+              <h3 className="font-bold text-base text-slate-900 mb-1 group-hover:text-blue-700 transition-colors">{tool.title[lang]}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed line-clamp-2 font-medium">{tool.desc[lang]}</p>
             </div>
           </div>
-          </Link>
-        </article>
+        </Link>
       );
-      toolsRenderedCount++;
-    });
+      toolIndex++;
+    }
     return items;
   };
 
-  // --- VISUAL UPDATE: TEXTURED BACKGROUND ---
-  // Menggunakan style inline untuk simulasi pattern titik-titik halus
+  // --- BACKGROUND KOTAK-KOTAK KECIL ---
   const backgroundPattern = {
-    backgroundImage: `radial-gradient(circle at 1px 1px, rgb(226 232 240 / 0.4) 1px, transparent 0)`,
-    backgroundSize: '24px 24px',
+    backgroundImage: `linear-gradient(to right, #f1f5f9 1px, transparent 1px), linear-gradient(to bottom, #f1f5f9 1px, transparent 1px)`,
+    backgroundSize: '16px 16px', // Ukuran kotak dikecilkan
   };
 
   return (
-    <div className="min-h-screen font-sans text-slate-800 bg-[#F8FAFC] flex flex-col overflow-x-hidden" style={backgroundPattern}>
+    <div className="min-h-screen font-sans text-slate-800 bg-white flex flex-col overflow-x-hidden" style={backgroundPattern}>
       
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200/80 h-16 shrink-0 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+      {/* FLOATING NAVBAR (MELAYANG) */}
+      <header className="fixed top-4 left-0 right-0 z-50 mx-auto max-w-7xl px-4 md:px-6">
+        <div className="bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl h-16 shadow-sm flex items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2">
             <div className="bg-slate-900 text-white p-1.5 rounded-lg shadow-sm">
               <FileImage className="w-5 h-5" />
@@ -225,22 +224,12 @@ export default function Home() {
             </span>
           </Link>
 
-          {/* SKELETON UNTUK NAVIGASI (Agar tidak berkedip saat load) */}
-          {!isLoaded ? (
-             <div className="hidden md:flex items-center gap-4 animate-pulse">
-                 <div className="h-4 w-20 bg-slate-200 rounded"></div>
-                 <div className="h-4 w-20 bg-slate-200 rounded"></div>
-                 <div className="h-8 w-16 bg-slate-200 rounded-full"></div>
-             </div>
-          ) : (
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-                {jpgTool && <Link href={`/tools/${jpgTool.id}`} className="hover:text-blue-600 transition-colors font-bold">{jpgTool.title[lang]}</Link>}
-                {mergeTool && <Link href={`/tools/${mergeTool.id}`} className="hover:text-blue-600 transition-colors font-bold">{mergeTool.title[lang]}</Link>}
-                <button onClick={toggleLang} className="flex items-center gap-1 hover:text-blue-600 font-bold px-3 py-1.5 rounded bg-slate-100/50 border border-slate-200 text-xs uppercase tracking-wide transition-colors">
-                <Globe size={12} /> {lang}
-                </button>
-            </nav>
-          )}
+          {/* Links Cleaned Up */}
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+            <button onClick={toggleLang} className="flex items-center gap-1 hover:text-blue-600 font-bold px-3 py-1.5 rounded bg-slate-50 border border-slate-200 text-xs uppercase tracking-wide transition-colors">
+               <Globe size={12} /> {lang}
+            </button>
+          </nav>
           
           <button className="md:hidden p-2 text-slate-600" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -249,9 +238,7 @@ export default function Home() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-            <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-slate-200 p-4 shadow-xl z-50">
-                {jpgTool && <Link href={`/tools/${jpgTool.id}`} className="block py-3 font-medium text-slate-700 border-b border-slate-100">{jpgTool.title[lang]}</Link>}
-                {mergeTool && <Link href={`/tools/${mergeTool.id}`} className="block py-3 font-medium text-slate-700 border-b border-slate-100">{mergeTool.title[lang]}</Link>}
+            <div className="md:hidden absolute top-20 left-4 right-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-xl z-50">
                 <button onClick={() => { toggleLang(); setIsMobileMenuOpen(false); }} className="w-full text-left py-3 font-medium text-slate-700 flex items-center gap-2">
                     <Globe size={16}/> {UI_TEXT.change_lang[lang]} ({lang.toUpperCase()})
                 </button>
@@ -259,14 +246,13 @@ export default function Home() {
         )}
       </header>
 
-      {/* HERO SECTION */}
-      <section className="bg-white/80 border-b border-slate-200 pt-12 pb-16 backdrop-blur-[2px]">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      {/* HERO SECTION - ADDED TOP PADDING FOR FLOATING NAV */}
+      <section className="pt-32 pb-16 border-b border-slate-200 bg-white/50 backdrop-blur-[1px]">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           
           {/* LEFT: Intro & Search */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             {!isLoaded ? (
-                // SKELETON HERO TEXT
                 <div className="space-y-4 animate-pulse">
                     <div className="h-10 bg-slate-200 rounded-lg w-3/4 mx-auto lg:mx-0"></div>
                     <div className="h-4 bg-slate-200 rounded w-full mx-auto lg:mx-0"></div>
@@ -282,7 +268,7 @@ export default function Home() {
                     {UI_TEXT.hero_desc[lang]}
                     </p>
                     
-                    {/* SEARCH BAR (Big & Clear) */}
+                    {/* SEARCH BAR */}
                     <div className="max-w-lg mx-auto lg:mx-0 relative pt-2">
                     <div className="relative flex items-center p-1 border-2 border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50/50 transition-all bg-white shadow-sm">
                         <Search className="text-slate-400 ml-3 shrink-0" size={20} />
@@ -293,6 +279,11 @@ export default function Home() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
+                        {search && (
+                            <button onClick={() => setSearch('')} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                                <X size={18}/>
+                            </button>
+                        )}
                     </div>
                     </div>
 
@@ -313,29 +304,39 @@ export default function Home() {
             )}
           </div>
 
-          {/* RIGHT: Quick Access (Compact Card) */}
+          {/* RIGHT: Quick Access */}
           <div className="lg:col-span-5 w-full">
-             <div className="bg-white/60 border border-slate-200/80 rounded-2xl p-6 shadow-sm backdrop-blur-sm">
+             <div className={`bg-white/80 border border-slate-200 rounded-2xl p-6 shadow-sm backdrop-blur-sm transition-all ${search ? 'ring-2 ring-blue-100 bg-blue-50/30' : ''}`}>
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                   <Star size={12} className="text-orange-500 fill-orange-500"/> {UI_TEXT.most_used[lang]}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                   {!isLoaded ? (
-                       // SKELETON QUICK ACCESS
-                       [1,2,3,4].map(i => <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse border border-slate-200"></div>)
+                   {search ? (
+                       <><Search size={14} className="text-blue-500"/> {UI_TEXT.search_result_hero[lang]}</>
                    ) : (
-                       [jpgTool, mergeTool, compressTool, splitTool].map((tool) => (
+                       <><Star size={12} className="text-orange-500 fill-orange-500"/> {UI_TEXT.most_used[lang]}</>
+                   )}
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                   {!isLoaded ? (
+                       [1,2,3,4].map(i => <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse border border-slate-200"></div>)
+                   ) : quickAccessTools.length > 0 ? (
+                       quickAccessTools.map((tool) => (
                         tool && (
-                            <Link href={`/tools/${tool.id}`} key={tool.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group">
-                            <div className={`p-2 rounded-md shadow-sm ${tool.bg} ${tool.color} group-hover:scale-105 transition-transform`}>
-                                <tool.icon size={16} strokeWidth={2}/>
+                            <Link href={`/tools/${tool.id}`} key={tool.id} className="group flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all cursor-pointer">
+                            <div className={`p-2.5 rounded-lg ${tool.bg} ${tool.color} group-hover:scale-110 transition-transform shrink-0`}>
+                                <tool.icon size={18} strokeWidth={2}/>
                             </div>
                             <div className="min-w-0">
-                                <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 truncate transition-colors">{tool.title[lang]}</p>
+                                <p className="text-xs font-bold text-slate-800 group-hover:text-blue-700 truncate transition-colors">{tool.title[lang]}</p>
+                                <p className="text-[10px] text-slate-400 truncate">{tool.category}</p>
                             </div>
                             </Link>
                         )
                        ))
+                   ) : (
+                       <div className="col-span-2 text-center py-8 text-slate-400 text-xs font-bold uppercase">
+                           <SearchX size={24} className="mx-auto mb-2 opacity-50"/>
+                           {UI_TEXT.no_result[lang]}
+                       </div>
                    )}
                 </div>
              </div>
@@ -352,21 +353,17 @@ export default function Home() {
       {/* --- MAIN TOOLS GRID --- */}
       <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-12 flex gap-8">
         
-        {/* SKYSCRAPER KIRI (Sticky) */}
         <aside className="hidden xl:block w-[160px] sticky top-24 h-fit">
            <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
         </aside>
 
-        {/* CONTENT AREA */}
         <div className="flex-1 flex flex-col gap-12 min-w-0">
-            {/* Iklan Mobile Top */}
             <div className="md:hidden flex justify-center">
                  <AdsterraBanner height={50} width={320} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
             </div>
 
             <main className="min-h-[400px]">
               {!isLoaded ? (
-                  // --- SKELETON LOADER GRID (High Priority Fix) ---
                   <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                       {[1,2,3,4,5,6,7,8].map(i => <ToolCardSkeleton key={i} />)}
                   </div>
@@ -376,18 +373,17 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="text-center py-20 bg-white border-2 border-dashed border-slate-200 rounded-3xl">
+                  <SearchX size={48} className="mx-auto mb-4 text-slate-300"/>
                   <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">{UI_TEXT.no_result[lang]}</p>
                 </div>
               )}
             </main>
 
-            {/* Iklan Bawah */}
             <div className="w-full flex justify-center mt-auto pt-4 border-t border-slate-200">
               <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
             </div>
         </div>
 
-        {/* SKYSCRAPER KANAN (Sticky) */}
         <aside className="hidden xl:block w-[160px] sticky top-24 h-fit">
            <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
         </aside>
@@ -404,10 +400,8 @@ export default function Home() {
               <div className="grid md:grid-cols-2 gap-6">
                   {OTHER_WEBSITES.map((site, idx) => (
                       <a href={site.url} target="_blank" rel="noopener noreferrer" key={idx} className={`group flex items-start gap-5 p-5 rounded-2xl border border-slate-200 transition-all hover:shadow-lg hover:-translate-y-0.5 bg-white hover:border-blue-300 relative overflow-hidden`}>
-                          {/* Decorative bg icon */}
                           <site.icon className={`absolute -bottom-6 -right-6 w-24 h-24 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity ${site.color}`} />
-                          
-                          <div className={`p-3 rounded-xl shadow-sm ${site.bg_icon}`}>
+                          <div className={`p-3 rounded-xl shadow-sm ${site.bg_icon} shrink-0`}>
                               <site.icon size={28} strokeWidth={2} />
                           </div>
                           <div>
@@ -432,7 +426,6 @@ export default function Home() {
                </div>
                <p className="text-slate-500 text-sm leading-relaxed max-w-sm font-medium">{UI_TEXT.footer_desc[lang]}</p>
            </div>
-           
            <div>
                <h4 className="font-bold text-slate-900 mb-4 text-xs uppercase tracking-widest">{UI_TEXT.footer_links[lang]}</h4>
                <ul className="space-y-2.5 text-sm text-slate-500 font-medium">
@@ -440,7 +433,6 @@ export default function Home() {
                    <li><a href="https://www.latihanonline.com" target="_blank" className="hover:text-blue-600 transition-colors">LatihanOnline</a></li>
                </ul>
            </div>
-
            <div>
                <h4 className="font-bold text-slate-900 mb-4 text-xs uppercase tracking-widest">{UI_TEXT.footer_legal[lang]}</h4>
                <ul className="space-y-2.5 text-sm text-slate-500 font-medium">
