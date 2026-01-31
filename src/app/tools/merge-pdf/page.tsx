@@ -24,7 +24,7 @@ export default function MergePdfPage() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   
   // SETTINGS
-  const [quality, setQuality] = useState(0.8); // Placeholder untuk future feature
+  const [quality, setQuality] = useState(0.8); 
   
   // UI & BAHASA
   const [lang, setLang] = useState<'id' | 'en'>('id');
@@ -93,11 +93,11 @@ export default function MergePdfPage() {
   const generateThumbnail = async (file: File): Promise<string | null> => {
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }); // Slice untuk safety
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }); 
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1); // Ambil halaman 1 saja
 
-      const viewport = page.getViewport({ scale: 0.3 }); // Skala kecil untuk thumbnail
+      const viewport = page.getViewport({ scale: 0.3 }); 
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       
@@ -171,7 +171,6 @@ export default function MergePdfPage() {
         }
 
         const pdfBytes = await mergedPdf.save();
-        // Fix Blob Type Error
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         setPdfUrl(URL.createObjectURL(blob));
     } catch (e) { 
@@ -195,7 +194,7 @@ export default function MergePdfPage() {
         <div className="flex items-center gap-4">
            <button onClick={toggleLang} className="text-[10px] font-bold px-3 py-1.5 bg-slate-100 rounded-lg hover:bg-slate-200 transition-all uppercase tracking-widest text-slate-600">{lang}</button>
            <Link href="/" className="flex items-center gap-2 text-xs font-bold text-red-400 hover:text-red-500 transition-colors bg-red-50 px-4 py-2 rounded-lg border border-slate-100">
-              <X size={16} /> {T.cancel[lang]}
+             <X size={16} /> {T.cancel[lang]}
            </Link>
         </div>
       </nav>
@@ -246,7 +245,7 @@ export default function MergePdfPage() {
                     <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
                     
                     <div className="bg-white border border-slate-200 rounded-[30px] p-10 text-center shadow-2xl relative overflow-hidden">
-                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce"><FileCheck size={40} strokeWidth={3} /></div>
+                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce"><CheckCircle2 size={40} strokeWidth={3} /></div>
                         <h2 className="text-3xl font-black text-slate-900 mb-3">{T.success_title[lang]}</h2>
                         <p className="text-slate-500 font-medium mb-8 leading-relaxed">{T.success_desc[lang]}</p>
                         
