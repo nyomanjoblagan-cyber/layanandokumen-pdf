@@ -43,7 +43,7 @@ export default function DeletePdfPages() {
     localStorage.setItem('user-lang', newLang);
   };
 
-  // --- 3. KAMUS (Updated) ---
+  // --- 3. KAMUS ---
   const T = {
     hero_title: { id: 'Hapus Halaman PDF', en: 'Delete PDF Pages' },
     hero_desc: { id: 'Klik halaman yang tidak diinginkan untuk menghapusnya. Cepat & Aman.', en: 'Click unwanted pages to remove them. Fast & Secure.' },
@@ -55,7 +55,7 @@ export default function DeletePdfPages() {
     selected_count: { id: 'dipilih', en: 'selected' },
     reset_btn: { id: 'Reset', en: 'Reset' },
     
-    // Sidebar Summary (FIXED)
+    // Sidebar Summary
     summary_title: { id: 'Ringkasan', en: 'Summary' },
     summary_total: { id: 'Total Halaman', en: 'Total Pages' },
     summary_delete: { id: 'Akan Dihapus', en: 'To Delete' },
@@ -96,7 +96,7 @@ export default function DeletePdfPages() {
 
         for (let i = 1; i <= totalPages; i++) {
             const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 0.3 });
+            const viewport = page.getViewport({ scale: 0.3 }); // Scale kecil biar ringan
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             
@@ -120,8 +120,9 @@ export default function DeletePdfPages() {
   const handleDelete = async () => {
     if (!file || selectedPages.length === 0) return;
     
+    // Validasi: Tidak boleh hapus semua halaman
     if (selectedPages.length === thumbnails.length) { 
-        alert(lang === 'id' ? "Tidak bisa menghapus semua halaman!" : "Cannot delete all pages!"); 
+        alert(lang === 'id' ? "Tidak bisa menghapus semua halaman! Sisakan minimal satu." : "Cannot delete all pages! Keep at least one."); 
         return; 
     }
 
@@ -131,8 +132,11 @@ export default function DeletePdfPages() {
         const pdfDoc = await PDFDocument.load(arrayBuffer);
         const newPdf = await PDFDocument.create();
         
+        // Logika: Salin hanya halaman yang TIDAK ada di array selectedPages
+        // pdf-lib menggunakan 0-based index, sama dengan index array thumbnails kita
         const pagesToKeep = thumbnails.map((_, i) => i).filter(i => !selectedPages.includes(i));
         const copiedPages = await newPdf.copyPages(pdfDoc, pagesToKeep);
+        
         copiedPages.forEach((page) => newPdf.addPage(page));
         
         const pdfBytes = await newPdf.save();
@@ -154,7 +158,7 @@ export default function DeletePdfPages() {
         <div className="flex items-center gap-4">
            <button onClick={toggleLang} className="text-[10px] font-bold px-3 py-1.5 bg-slate-100 rounded-lg hover:bg-slate-200 transition-all uppercase tracking-widest text-slate-600">{lang}</button>
            <Link href="/" className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
-              <X size={16} /> {T.cancel[lang]}
+             <X size={16} /> {T.cancel[lang]}
            </Link>
         </div>
       </nav>
@@ -195,7 +199,7 @@ export default function DeletePdfPages() {
           </div>
         )}
 
-        {/* VIEW 2: DOWNLOAD */}
+        {/* VIEW 2: DOWNLOAD (SUCCESS) */}
         {pdfUrl && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-white overflow-y-auto">
              <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
@@ -207,17 +211,16 @@ export default function DeletePdfPages() {
                     <div className="bg-white border border-slate-200 rounded-[30px] p-10 text-center shadow-2xl relative overflow-hidden">
                         <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce"><CheckCircle2 size={40} strokeWidth={3} /></div>
                         <h2 className="text-3xl font-black text-slate-900 mb-3">{T.success_title[lang]}</h2>
-                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">{T.success_desc[lang]}</p>
-                        
+                        <p className="text-slate-500 font-medium mb-8">{T.success_desc[lang]}</p>
                         <div className="flex flex-col gap-4">
-                           <a href={pdfUrl} download={`Trimmed_${file?.name}`} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 uppercase tracking-widest text-sm"><Download size={20} /> {T.download_btn[lang]}</a>
-                           <button onClick={() => { setFile(null); setPdfUrl(null); setThumbnails([]); setSelectedPages([]); }} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"><ArrowLeft size={16} /> {T.back_home[lang]}</button>
+                           <a href={pdfUrl} download={`Modified_${file?.name}`} className="w-full bg-red-600 hover:bg-red-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 uppercase tracking-widest text-sm"><Download size={20} /> {T.download_btn[lang]}</a>
+                           <button onClick={() => { setFile(null); setPdfUrl(null); }} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"><ArrowLeft size={16} /> {T.back_home[lang]}</button>
                         </div>
                     </div>
                     
-                    <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
+                    <div className="flex justify-center mt-8"><AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" /></div>
                 </div>
-                
+
                 <div className="hidden xl:block sticky top-20"><AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" /></div>
              </div>
           </div>
@@ -261,10 +264,15 @@ export default function DeletePdfPages() {
                                     }} className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all group shadow-sm hover:shadow-md ${isSelected ? 'border-red-500 ring-4 ring-red-100 opacity-80' : 'border-white hover:border-red-200'}`}>
                                         
                                         <div className="aspect-[3/4] bg-white relative">
+                                            {/* Gambar Thumbnail */}
                                             <img src={thumb} alt={`page ${idx}`} className={`w-full h-full object-contain transition-all ${isSelected ? 'grayscale blur-[1px]' : ''}`} />
+                                            
+                                            {/* Nomor Halaman */}
                                             <div className={`absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shadow-sm ${isSelected ? 'bg-red-600 text-white scale-110' : 'bg-white text-slate-700 border border-slate-100'}`}>
                                                 {idx + 1}
                                             </div>
+
+                                            {/* Overlay Sampah (Visual Delete) */}
                                             <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${isSelected ? 'opacity-100 bg-red-900/10' : 'opacity-0 group-hover:opacity-100 bg-black/5'}`}>
                                                 <Trash2 size={40} className={`${isSelected ? 'text-red-600 scale-110' : 'text-slate-400 scale-90'} drop-shadow-lg transition-transform duration-200`} />
                                             </div>
@@ -280,7 +288,7 @@ export default function DeletePdfPages() {
                     </div>
                 </div>
 
-                {/* SIDEBAR SUMMARY (BAHASA FIXED) */}
+                {/* SIDEBAR SUMMARY */}
                 <div className="w-full md:w-80 space-y-6 shrink-0 pb-20 md:pb-0">
                     <div className="bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 p-6 flex flex-col h-full md:h-auto">
                         <div className="mb-6">

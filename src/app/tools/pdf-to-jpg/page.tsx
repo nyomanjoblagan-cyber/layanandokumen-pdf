@@ -4,36 +4,40 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
 import { 
-  FileImage, Settings2, Download, Globe,
+  FileImage, Settings2, Download,
   CheckCircle2, X, ArrowLeft, FileCheck, Loader2, Image as ImageIcon, Trash2
 } from 'lucide-react';
-import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
+import ToolLayout from '@/components/ToolLayout';
 
-// 1. WORKER STABIL (WAJIB)
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
 
 export default function PdfToJpgPage() {
-  // STATE UTAMA
   const [file, setFile] = useState<File | null>(null);
-  const [pages, setPages] = useState<string[]>([]); // Array Base64 Images
+  const [pages, setPages] = useState<string[]>([]); // Array Blob URLs
   const [isProcessing, setIsProcessing] = useState(false);
   const [zipUrl, setZipUrl] = useState<string | null>(null);
   
-  // UI & BAHASA
   const [lang, setLang] = useState<'id' | 'en'>('id');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- 2. LOGIKA BAHASA ---
   useEffect(() => {
     const saved = localStorage.getItem('user-lang') as 'id' | 'en';
     if (saved) setLang(saved);
     setIsLoaded(true);
   }, []);
+
+  // Cleanup object URLs on unmount or pages change to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      pages.forEach(url => URL.revokeObjectURL(url));
+      if (zipUrl) URL.revokeObjectURL(zipUrl);
+    };
+  }, [pages, zipUrl]);
 
   const toggleLang = () => {
     const newLang = lang === 'id' ? 'en' : 'id';
@@ -41,27 +45,20 @@ export default function PdfToJpgPage() {
     localStorage.setItem('user-lang', newLang);
   };
 
-  // --- 3. KAMUS ---
   const T = {
     hero_title: { id: 'Konversi PDF ke JPG', en: 'Convert PDF to JPG' },
     hero_desc: { 
-      id: 'Ubah setiap halaman PDF menjadi gambar JPG berkualitas tinggi. Unduh per halaman atau sekaligus (ZIP).', 
-      en: 'Turn every PDF page into a high-quality JPG image. Download individually or all at once (ZIP).' 
+      id: 'Ubah setiap halaman PDF menjadi gambar JPG berkualitas tinggi. Unduh per halaman atau sekaligus (ZIP). (Dioptimalkan untuk memori)', 
+      en: 'Turn every PDF page into a high-quality JPG image. Download individually or all at once (ZIP). (Memory optimized)' 
     },
     select_btn: { id: 'Pilih File PDF', en: 'Select PDF File' },
     drop_text: { id: 'atau tarik file PDF ke sini', en: 'or drop PDF file here' },
-    
-    // Status
     converting: { id: 'Mengekstrak Gambar...', en: 'Extracting Images...' },
     preview: { id: 'Galeri Halaman', en: 'Page Gallery' },
-    
-    // Actions
     download_zip: { id: 'Download Semua (ZIP)', en: 'Download All (ZIP)' },
     download_single: { id: 'Simpan', en: 'Save' },
     back_home: { id: 'Konversi Lagi', en: 'Convert Another' },
     cancel: { id: 'Tutup', en: 'Close' },
-    
-    // Info
     info: { id: 'Info File', en: 'File Info' },
     pages_count: { id: 'Halaman', en: 'Pages' }
   };
@@ -76,7 +73,6 @@ export default function PdfToJpgPage() {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
   };
 
-  // --- 4. ENGINE KONVERSI (PDF -> CANVAS -> JPG) ---
   const processFile = async (uploadedFile: File) => {
     if (uploadedFile.type !== 'application/pdf') {
         alert("Mohon pilih file PDF.");
@@ -98,10 +94,7 @@ export default function PdfToJpgPage() {
 
         for (let i = 1; i <= totalPages; i++) {
             const page = await pdf.getPage(i);
-            
-            // Scale 1.5 = Kualitas Tajam (Sekitar 150 DPI)
             const viewport = page.getViewport({ scale: 1.5 });
-            
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
 
@@ -114,16 +107,23 @@ export default function PdfToJpgPage() {
                     viewport: viewport
                 }).promise;
 
-                // Convert ke JPG (Quality 0.8 / 80%)
-                extractedImages.push(canvas.toDataURL('image/jpeg', 0.8));
+                // Memori Optimization: Gunakan Blob URL daripada Base64
+                const blobUrl = await new Promise<string>((resolve) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            resolve(URL.createObjectURL(blob));
+                        }
+                    }, 'image/jpeg', 0.8);
+                });
+                
+                extractedImages.push(blobUrl);
             }
         }
 
         setPages(extractedImages);
         
-        // Auto Generate ZIP
         if (extractedImages.length > 0) {
-            generateZip(extractedImages, uploadedFile.name);
+            await generateZip(extractedImages, uploadedFile.name);
         }
 
     } catch (e) {
@@ -135,17 +135,15 @@ export default function PdfToJpgPage() {
     }
   };
 
-  // --- 5. ZIP GENERATOR ---
   const generateZip = async (images: string[], filename: string) => {
     const zip = new JSZip();
-    const folderName = filename.replace('.pdf', '') + '_images';
-    // const folder = zip.folder(folderName); // Opsi folder dalam zip
-
-    images.forEach((imgData, idx) => {
-        const data = imgData.split(',')[1];
-        // Simpan langsung di root zip agar lebih mudah diakses user
-        zip.file(`page_${idx + 1}.jpg`, data, { base64: true });
-    });
+    
+    for (let idx = 0; idx < images.length; idx++) {
+        const url = images[idx];
+        const response = await fetch(url);
+        const blob = await response.blob();
+        zip.file(`page_${idx + 1}.jpg`, blob);
+    }
 
     const content = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(content);
@@ -153,6 +151,8 @@ export default function PdfToJpgPage() {
   };
 
   const resetAll = () => {
+    pages.forEach(url => URL.revokeObjectURL(url));
+    if (zipUrl) URL.revokeObjectURL(zipUrl);
     setFile(null);
     setPages([]);
     setZipUrl(null);
@@ -161,27 +161,15 @@ export default function PdfToJpgPage() {
   if (!isLoaded) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans relative selection:bg-blue-100 selection:text-blue-700 flex flex-col overflow-x-hidden">
-      
-      {/* NAVBAR */}
-      <nav className="bg-white border-b border-slate-200 h-16 px-4 md:px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm shrink-0">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><FileImage size={18} /></div>
-          <span className="font-bold text-lg md:text-xl tracking-tight text-slate-900 italic uppercase">
-              <span className="md:hidden">PDF to <span className="text-blue-600">JPG</span></span>
-              <span className="hidden md:inline">PDF<span className="text-blue-600">2JPG</span> Pro</span>
-          </span>
-        </Link>
-        <div className="flex items-center gap-4">
-           <button onClick={toggleLang} className="text-[10px] font-bold px-3 py-1.5 bg-slate-100 rounded-lg hover:bg-slate-200 transition-all uppercase tracking-widest text-slate-600">{lang}</button>
-           <Link href="/" className="flex items-center gap-2 text-xs font-bold text-red-400 hover:text-red-500 transition-colors bg-red-50 px-4 py-2 rounded-lg border border-slate-100">
-              <X size={16} /> {T.cancel[lang]}
-           </Link>
-        </div>
-      </nav>
-
-      <main className="flex-1 relative z-10 flex flex-col h-[calc(100dvh-64px)] md:h-auto overflow-y-auto">
-        
+    <ToolLayout
+      lang={lang}
+      toggleLang={toggleLang}
+      titleDesktop={<>PDF<span className="text-blue-600">2JPG</span> Pro</>}
+      titleMobile={<>PDF to <span className="text-blue-600">JPG</span></>}
+      icon={<FileImage size={18} />}
+      iconBgColor="bg-blue-600"
+      selectionClass="selection:bg-blue-100 selection:text-blue-700"
+    >
         {/* VIEW 1: UPLOAD */}
         {!file && (
           <div 
@@ -220,15 +208,12 @@ export default function PdfToJpgPage() {
         {/* VIEW 2: PROCESSING & RESULT */}
         {file && (
           <div className="flex flex-col h-full md:p-6 md:gap-6 max-w-[1600px] mx-auto w-full">
-            {/* ADS TOP */}
             <div className="flex justify-center mb-4 shrink-0 overflow-hidden px-4">
                <div className="hidden md:block"><AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
                <div className="md:hidden"><AdsterraBanner height={50} width={320} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" /></div>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
-                
-                {/* SIDEBAR (INFO & ACTION) */}
                 <div className="w-full lg:w-80 space-y-6 shrink-0 order-1 lg:order-1 px-4 lg:px-0">
                     <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
                         <h3 className="font-black text-[10px] text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2"><Settings2 size={14}/> {T.info[lang]}</h3>
@@ -265,7 +250,6 @@ export default function PdfToJpgPage() {
                     </div>
                 </div>
 
-                {/* MAIN GALLERY */}
                 <div className="flex-1 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 md:p-8 overflow-y-auto min-h-[400px] order-2 lg:order-2">
                     <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
                         <h3 className="font-black text-sm text-slate-800 flex items-center gap-2 uppercase tracking-wide"><ImageIcon size={16} className="text-blue-500" /> {T.preview[lang]}</h3>
@@ -283,14 +267,12 @@ export default function PdfToJpgPage() {
                                     <div className="aspect-[3/4] p-2">
                                         <img src={img} alt={`page ${idx+1}`} className="w-full h-full object-contain" />
                                     </div>
-                                    {/* Overlay Download */}
                                     <div className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 backdrop-blur-sm p-4">
                                         <span className="text-white font-black text-lg">#{idx + 1}</span>
                                         <a href={img} download={`page_${idx+1}.jpg`} className="bg-white text-slate-900 px-4 py-2 rounded-lg font-bold text-[10px] flex items-center gap-2 hover:bg-blue-50 transition-colors uppercase tracking-widest w-full justify-center">
                                             <Download size={14}/> JPG
                                         </a>
                                     </div>
-                                    {/* Mobile Badge */}
                                     <div className="md:hidden absolute top-2 right-2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded">#{idx+1}</div>
                                 </div>
                             ))}
@@ -300,7 +282,6 @@ export default function PdfToJpgPage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+    </ToolLayout>
   );
 }
