@@ -5,7 +5,7 @@ import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { 
   Unlock, FileText, CheckCircle2, Download, Globe, 
-  X, ArrowLeft, Loader2, KeyRound, AlertCircle, ShieldOff
+  X, ArrowLeft, Loader2, KeyRound, AlertCircle, ShieldOff, Eye, EyeOff
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';

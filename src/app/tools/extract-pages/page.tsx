@@ -4,22 +4,24 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { 
-  FileUp, FileText, CheckCircle2, Download, Globe, 
+  FileUp, CheckCircle2, Download, Globe, 
   X, ArrowLeft, Loader2, CheckSquare, Square, MousePointerClick, Info, Layers
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
-// 1. WORKER STABIL (Wajib)
+// 1. SETUP WORKER (WAJIB)
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
 
 export default function ExtractPagesPage() {
-  // STATE UTAMA
+  // --- STATE UTAMA ---
   const [file, setFile] = useState<File | null>(null);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
-  const [selectedPages, setSelectedPages] = useState<number[]>([]); // Array index halaman yang DIPILIH
+  // Array menyimpan index halaman yang DIPILIH untuk diambil
+  const [selectedPages, setSelectedPages] = useState<number[]>([]); 
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -43,19 +45,19 @@ export default function ExtractPagesPage() {
     localStorage.setItem('user-lang', newLang);
   };
 
-  // --- 3. KAMUS ---
+  // --- 3. KAMUS BAHASA ---
   const T = {
     hero_title: { id: 'Ambil Halaman PDF', en: 'Extract PDF Pages' },
     hero_desc: { 
-      id: 'Pilih halaman-halaman penting dari dokumen PDF Anda dan simpan menjadi satu file baru yang lebih ringkas.', 
-      en: 'Select important pages from your PDF document and save them as a new, concise file.' 
+      id: 'Pilih halaman penting dari dokumen PDF dan simpan menjadi file baru yang lebih ringkas.', 
+      en: 'Select important pages from your PDF and save them as a new concise file.' 
     },
     select_btn: { id: 'Pilih File PDF', en: 'Select PDF File' },
     drop_text: { id: 'atau tarik file ke sini', en: 'or drop file here' },
     
     // Editor UI
     preview_title: { id: 'Pilih Halaman', en: 'Select Pages' },
-    selected_count: { id: 'dipilih', en: 'selected' },
+    selected_count: { id: 'halaman dipilih', en: 'pages selected' },
     
     // Actions
     btn_extract: { id: 'Ambil Halaman', en: 'Extract Pages' },
@@ -63,7 +65,7 @@ export default function ExtractPagesPage() {
     btn_reset: { id: 'Reset', en: 'Reset' },
     
     // Info
-    info_text: { id: 'Klik pada halaman yang ingin Anda AMBIL. Halaman yang tidak dipilih akan ditinggalkan.', en: 'Click on pages you want to KEEP. Unselected pages will be left behind.' },
+    info_text: { id: 'Klik halaman yang ingin Anda AMBIL. Halaman yang tidak dipilih akan dibuang.', en: 'Click pages you want to KEEP. Unselected pages will be discarded.' },
 
     // Status
     processing: { id: 'MEMUAT...', en: 'LOADING...' },
@@ -77,6 +79,7 @@ export default function ExtractPagesPage() {
     cancel: { id: 'Tutup', en: 'Close' },
   };
 
+  // --- HANDLER UPLOAD ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
   };
@@ -87,7 +90,7 @@ export default function ExtractPagesPage() {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
   };
 
-  // --- 4. RENDER THUMBNAIL ---
+  // --- 4. RENDER THUMBNAIL (GENERATE GAMBAR HALAMAN) ---
   const processFile = async (uploadedFile: File) => {
     if (uploadedFile.type !== 'application/pdf') {
         alert("Mohon pilih file PDF.");
@@ -106,12 +109,12 @@ export default function ExtractPagesPage() {
         const totalPages = pdf.numPages;
         const thumbs: string[] = [];
 
-        // Limit preview max 50 halaman agar performa browser aman
+        // Limit preview max 50 halaman agar browser tidak berat/crash
         const limit = Math.min(totalPages, 50); 
 
         for (let i = 1; i <= limit; i++) {
             const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 0.25 }); // Low res thumbnail
+            const viewport = page.getViewport({ scale: 0.3 }); // Resolusi kecil untuk thumbnail
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             
@@ -123,7 +126,7 @@ export default function ExtractPagesPage() {
             }
         }
         setThumbnails(thumbs);
-        setSelectedPages([]); 
+        setSelectedPages([]); // Reset pilihan saat file baru masuk
 
     } catch (error) {
         console.error(error);
@@ -134,12 +137,13 @@ export default function ExtractPagesPage() {
     }
   };
 
-  // --- 5. LOGIKA SELEKSI ---
+  // --- 5. LOGIKA SELEKSI HALAMAN ---
   const togglePage = (index: number) => {
     if (selectedPages.includes(index)) {
+        // Hapus dari seleksi
         setSelectedPages(selectedPages.filter(id => id !== index));
     } else {
-        // Urutkan halaman agar hasil PDF rapi sesuai urutan asli (ascending)
+        // Tambah ke seleksi & urutkan agar rapi (Ascending)
         setSelectedPages([...selectedPages, index].sort((a, b) => a - b));
     }
   };
@@ -147,7 +151,7 @@ export default function ExtractPagesPage() {
   const selectAll = () => setSelectedPages(thumbnails.map((_, i) => i));
   const deselectAll = () => setSelectedPages([]);
 
-  // --- 6. EXTRACT ENGINE ---
+  // --- 6. PROSES EKSTRAKSI (PDF-LIB) ---
   const handleExtract = async () => {
     if (!file || selectedPages.length === 0) {
         alert(lang === 'id' ? "Pilih minimal 1 halaman." : "Select at least 1 page.");
@@ -160,13 +164,13 @@ export default function ExtractPagesPage() {
         const pdfDoc = await PDFDocument.load(arrayBuffer);
         const newPdf = await PDFDocument.create();
         
-        // Copy hanya halaman yang dipilih
+        // Copy hanya halaman yang ada di array selectedPages
         const copiedPages = await newPdf.copyPages(pdfDoc, selectedPages);
         copiedPages.forEach((page) => newPdf.addPage(page));
 
         const pdfBytes = await newPdf.save();
         
-        // FIX BLOB ERROR
+        // Buat URL Blob untuk download
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
@@ -189,15 +193,14 @@ export default function ExtractPagesPage() {
   if (!isLoaded) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans relative selection:bg-blue-100 selection:text-blue-700 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans relative selection:bg-cyan-100 selection:text-cyan-700 flex flex-col overflow-hidden">
       
       {/* NAVBAR */}
       <nav className="bg-white/90 backdrop-blur-md border-b border-slate-200 h-16 px-4 md:px-6 flex items-center justify-between sticky top-0 z-50 shrink-0 shadow-sm">
         <Link href="/" className="flex items-center gap-2 group">
           <div className="bg-cyan-600 text-white p-1 md:p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><FileUp size={18} /></div>
           <span className="font-bold text-lg md:text-xl tracking-tight text-slate-900 italic uppercase">
-              <span className="md:hidden">Extract<span className="text-cyan-600">PDF</span></span>
-              <span className="hidden md:inline">Layanan<span className="text-cyan-600">Dokumen</span> <span className="text-slate-300 font-black">PDF</span></span>
+              Extract<span className="text-cyan-600">PDF</span>
           </span>
         </Link>
         <div className="flex items-center gap-2 md:gap-4">
@@ -212,7 +215,7 @@ export default function ExtractPagesPage() {
 
       <main className="flex-1 relative z-10 flex flex-col h-[calc(100dvh-56px)] md:h-auto">
         
-        {/* STATE 1: LANDING */}
+        {/* VIEW 1: UPLOAD AREA */}
         {!file && (
           <div 
             className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-all overflow-y-auto ${isDraggingOver ? 'bg-cyan-50/50' : ''}`}
@@ -259,7 +262,7 @@ export default function ExtractPagesPage() {
           </div>
         )}
 
-        {/* STATE 2: SUCCESS */}
+        {/* VIEW 2: SUCCESS / DOWNLOAD */}
         {pdfUrl && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-white overflow-y-auto">
              <div className="w-full max-w-5xl flex gap-8 justify-center items-start pt-10">
@@ -301,17 +304,18 @@ export default function ExtractPagesPage() {
           </div>
         )}
 
-        {/* STATE 3: EDITOR (GRID SELECTION) */}
+        {/* VIEW 3: EDITOR (GRID SELECTION) */}
         {file && !pdfUrl && (
           <div className="w-full max-w-[1400px] mx-auto flex gap-6 px-0 md:px-4 lg:px-8 h-[calc(100vh-64px)] md:h-auto">
             
-            {/* Iklan Kiri Desktop */}
+            {/* IKLAN KIRI (Desktop) */}
             <div className="hidden xl:block sticky top-20 h-fit pt-6">
                 <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
             </div>
 
+            {/* MAIN CONTENT AREA */}
             <div className="flex-1 flex flex-col h-full bg-slate-50 md:bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 overflow-hidden">
-                {/* TOOLBAR */}
+                {/* TOOLBAR ATAS */}
                 <div className="p-4 md:p-6 border-b border-slate-100 bg-white sticky top-0 z-20 flex flex-col md:flex-row md:items-center justify-between shrink-0 gap-4 shadow-sm">
                     <div className="flex items-center gap-4">
                         <div>
@@ -332,7 +336,7 @@ export default function ExtractPagesPage() {
                             <Square size={14}/> {T.btn_reset[lang]}
                          </button>
                          
-                         {/* Desktop Button */}
+                         {/* Desktop Extract Button */}
                          <button onClick={handleExtract} disabled={selectedPages.length === 0 || isExtracting} className="hidden md:flex px-5 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-cyan-200 active:scale-95 transition-all items-center gap-2">
                             {isExtracting ? <Loader2 className="animate-spin" size={16}/> : <FileUp size={16}/>}
                             {T.btn_extract[lang]}
@@ -340,16 +344,17 @@ export default function ExtractPagesPage() {
                     </div>
                 </div>
 
-                {/* GRID CONTENT */}
+                {/* GRID THUMBNAILS */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 pb-32 md:pb-6">
-                    {/* INFO BOX */}
-                    <div className="mb-4 bg-cyan-50 border border-cyan-100 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+                    {/* Info Hint */}
+                    <div className="mb-4 bg-cyan-50 border border-cyan-100 rounded-xl p-4 flex items-start gap-3">
                         <Info className="text-cyan-600 shrink-0 mt-0.5" size={20} />
                         <div className="text-xs md:text-sm text-cyan-700 font-medium">
                             {T.info_text[lang]}
                         </div>
                     </div>
 
+                    {/* Grid Layout */}
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
                         {thumbnails.map((thumb, idx) => {
                             const isSelected = selectedPages.includes(idx);
@@ -371,12 +376,12 @@ export default function ExtractPagesPage() {
                 </div>
             </div>
 
-            {/* Iklan Kanan Desktop */}
+            {/* IKLAN KANAN (Desktop) */}
             <div className="hidden xl:block sticky top-20 h-fit pt-6">
                 <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
             </div>
 
-            {/* FAB Mobile */}
+            {/* MOBILE FLOATING BUTTON */}
             <div className="md:hidden fixed bottom-6 right-6 z-50">
                 <button 
                     onClick={handleExtract} 

@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { 
   FileCode, FileText, CheckCircle2, Download, Globe, 
-  X, ArrowLeft, Loader2, Code2, Monitor
+  X, ArrowLeft, Loader2, Code2, Monitor, Eye
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
@@ -20,6 +20,7 @@ export default function PdfToHtmlPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [htmlUrl, setHtmlUrl] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'code' | 'preview'>('preview'); // Toggle View
   
   // UI & BAHASA
   const [lang, setLang] = useState<'id' | 'en'>('id');
@@ -51,7 +52,9 @@ export default function PdfToHtmlPage() {
     drop_text: { id: 'atau tarik file ke sini', en: 'or drop file here' },
     
     // UI
-    preview_title: { id: 'Kode HTML (Preview)', en: 'HTML Code (Preview)' },
+    preview_title: { id: 'Hasil HTML', en: 'HTML Result' },
+    tab_preview: { id: 'Tampilan Web', en: 'Web View' },
+    tab_code: { id: 'Kode Sumber', en: 'Source Code' },
     
     // Actions
     btn_convert: { id: 'Konversi ke HTML', en: 'Convert to HTML' },
@@ -90,7 +93,7 @@ export default function PdfToHtmlPage() {
     setPreviewHtml('');
   };
 
-  // --- 4. ENGINE PDF TO HTML (BASIC TEXT BASED) ---
+  // --- 4. ENGINE PDF TO HTML (ENHANCED) ---
   const handleConvert = async () => {
     if (!file) return;
     setIsProcessing(true);
@@ -107,25 +110,32 @@ export default function PdfToHtmlPage() {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
             
-            // Mengambil item teks dan menyusunnya
-            const pageItems = textContent.items.map((item: any) => {
-                // Sederhana: bungkus setiap baris teks dalam <p>
-                // Versi pro butuh kalkulasi posisi Y (top) untuk layout akurat
-                return `<p>${item.str}</p>`;
-            }).join('');
+            // Logika sederhana untuk memisahkan paragraf
+            // Kita gabungkan item teks, tapi jika posisi Y berubah drastis, kita anggap ganti baris
+            let pageHtml = '';
+            let lastY = -1;
+
+            textContent.items.forEach((item: any) => {
+                // Sederhana: jika beda baris (transform[5] adalah Y), tambahkan <br>
+                const currentY = item.transform[5];
+                if (lastY !== -1 && Math.abs(currentY - lastY) > 10) {
+                    pageHtml += '<br/>';
+                }
+                pageHtml += item.str + ' ';
+                lastY = currentY;
+            });
             
             bodyContent += `
             <div class="pdf-page" id="page-${i}">
-                <div class="page-number">Page ${i}</div>
+                <div class="page-header">Page ${i}</div>
                 <div class="page-content">
-                    ${pageItems}
+                    <p>${pageHtml}</p>
                 </div>
             </div>
-            <hr class="page-break">
             `;
         }
 
-        // Template HTML Standar
+        // Template HTML yang lebih cantik
         const finalHtml = `
 <!DOCTYPE html>
 <html lang="${lang}">
@@ -134,12 +144,15 @@ export default function PdfToHtmlPage() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${file.name.replace('.pdf', '')}</title>
     <style>
-        body { font-family: sans-serif; line-height: 1.6; color: #333; background: #f4f4f4; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; }
-        .pdf-page { margin-bottom: 30px; }
-        .page-number { font-size: 0.8em; color: #999; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
-        .page-break { border: 0; border-top: 1px dashed #ccc; margin: 40px 0; }
-        p { margin-bottom: 10px; min-height: 1em; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background: #f0f2f5; padding: 20px; margin: 0; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 50px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 12px; }
+        h1 { text-align: center; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 40px; }
+        .pdf-page { margin-bottom: 40px; padding-bottom: 40px; border-bottom: 1px dashed #ccc; }
+        .pdf-page:last-child { border-bottom: none; }
+        .page-header { font-size: 0.8em; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+        .page-content { font-size: 1.1em; text-align: justify; }
+        p { margin-bottom: 15px; }
+        @media (max-width: 600px) { .container { padding: 20px; } }
     </style>
 </head>
 <body>
@@ -258,21 +271,34 @@ export default function PdfToHtmlPage() {
                 {/* PREVIEW CODE (LEFT) */}
                 <div className="flex-1 bg-slate-900 md:rounded-3xl md:shadow-xl md:border border-slate-700 flex flex-col overflow-hidden order-2 lg:order-1">
                     <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900 sticky top-0 z-10">
-                        <h3 className="font-bold text-sm md:text-base text-slate-300 flex items-center gap-2">
-                           <Code2 className="text-purple-400" size={18}/> {T.preview_title[lang]}
-                        </h3>
+                        <div className="flex gap-2">
+                            <button onClick={() => setViewMode('preview')} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'preview' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+                                <Eye size={14}/> {T.tab_preview[lang]}
+                            </button>
+                            <button onClick={() => setViewMode('code')} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'code' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+                                <Code2 size={14}/> {T.tab_code[lang]}
+                            </button>
+                        </div>
                     </div>
                     
-                    <div className="flex-1 relative overflow-auto custom-scrollbar p-4">
+                    <div className="flex-1 relative overflow-auto custom-scrollbar">
                         {isProcessing ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <Loader2 className="animate-spin text-purple-500 mb-4" size={40}/>
                                 <p className="text-slate-400 text-xs font-bold animate-pulse uppercase tracking-widest">{T.processing[lang]}</p>
                             </div>
                         ) : previewHtml ? (
-                            <pre className="text-xs md:text-sm font-mono text-green-400 whitespace-pre-wrap">
-                                {previewHtml}
-                            </pre>
+                            viewMode === 'preview' ? (
+                                <iframe 
+                                    srcDoc={previewHtml} 
+                                    className="w-full h-full bg-white border-none block"
+                                    title="HTML Preview"
+                                />
+                            ) : (
+                                <pre className="p-4 text-xs md:text-sm font-mono text-green-400 whitespace-pre-wrap">
+                                    {previewHtml}
+                                </pre>
+                            )
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-slate-600">
                                 <Monitor size={48} className="mb-2 opacity-50"/>

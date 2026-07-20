@@ -3,89 +3,129 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  Search, Menu, X, Globe, FileText, ArrowRight, Star,
+  Search, Menu, X, Globe, FileText, ArrowRight, ShieldCheck,
   Scissors, Combine, RefreshCcw, Image, Lock, Unlock, PenTool, 
   Minimize, Layers, Trash2, FileSignature, BookOpen, FileImage, 
   BadgeCheck, Maximize, FileUp, Camera, FilePenLine, Stamp, 
-  FileDown, FileType, Layout, FileCode, CheckCircle2, ExternalLink,
-  ShieldCheck, Wand2, Plus, GripVertical, TrendingUp, Zap
+  Layout, FileCode, ExternalLink, Zap, Star, SearchX, Grid3x3, Shield, Edit3, GitMerge
 } from 'lucide-react';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
-// --- TYPE DEFINITION ---
+// --- TYPE ---
 type Language = 'id' | 'en';
 
-// --- DATA TOOLS CONFIGURATION ---
+// --- DATA TOOLS (DESKRIPSI MIDDLE GROUND) ---
 const TOOLS = [
-  // 1. POPULER
-  { id: 'jpg-to-pdf', title: { id: 'JPG ke PDF', en: 'JPG to PDF' }, desc: { id: 'Ubah foto menjadi PDF.', en: 'Convert photos to PDF.' }, icon: Image, category: 'Populer', color: 'text-orange-600', bg: 'bg-orange-50' },
-  { id: 'merge-pdf', title: { id: 'Gabung PDF', en: 'Merge PDF' }, desc: { id: 'Satukan banyak file PDF.', en: 'Combine multiple PDFs.' }, icon: Combine, category: 'Populer', color: 'text-purple-600', bg: 'bg-purple-50' },
-  { id: 'compress-pdf', title: { id: 'Kompres PDF', en: 'Compress PDF' }, desc: { id: 'Kecilkan ukuran file PDF.', en: 'Reduce PDF file size.' }, icon: Minimize, category: 'Populer', color: 'text-green-600', bg: 'bg-green-50' },
-  { id: 'split-pdf', title: { id: 'Pisah PDF', en: 'Split PDF' }, desc: { id: 'Ambil halaman tertentu.', en: 'Separate specific pages.' }, icon: Scissors, category: 'Populer', color: 'text-red-500', bg: 'bg-red-50' },
-  { id: 'scan-pdf', title: { id: 'Scan PDF', en: 'Scan PDF' }, desc: { id: 'Scan dokumen pakai kamera.', en: 'Scan docs via camera.' }, icon: Camera, category: 'Populer', color: 'text-blue-600', bg: 'bg-blue-50' },
-  { id: 'edit-pdf', title: { id: 'Edit PDF', en: 'Edit PDF' }, desc: { id: 'Tambahkan teks manual.', en: 'Add manual text.' }, icon: FilePenLine, category: 'Populer', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  // POPULER (6 tools)
+  { 
+    id: 'jpg-to-pdf', 
+    title: { id: 'JPG ke PDF', en: 'JPG to PDF' }, 
+    desc: { 
+      id: 'Ubah gambar JPG/PNG menjadi dokumen PDF dengan mudah dan cepat.', 
+      en: 'Convert JPG/PNG images into PDF documents easily and quickly.' 
+    }, 
+    icon: Image, category: 'Populer', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', border_hover: 'hover:border-orange-300', badge: 'from-orange-500 to-amber-400'
+  },
+  { 
+    id: 'merge-pdf', 
+    title: { id: 'Gabung PDF', en: 'Merge PDF' }, 
+    desc: { 
+      id: 'Gabungkan banyak file PDF menjadi satu dokumen tunggal yang rapi.', 
+      en: 'Combine multiple PDF files into a single, neat document.' 
+    }, 
+    icon: Combine, category: 'Populer', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', border_hover: 'hover:border-purple-300', badge: 'from-purple-500 to-pink-400'
+  },
+  { 
+    id: 'compress-pdf', 
+    title: { id: 'Kompres PDF', en: 'Compress PDF' }, 
+    desc: { 
+      id: 'Kecilkan ukuran file PDF secara signifikan tanpa mengurangi kualitas visual.', 
+      en: 'Significantly reduce PDF file size without compromising visual quality.' 
+    }, 
+    icon: Minimize, category: 'Populer', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', border_hover: 'hover:border-emerald-300', badge: 'from-emerald-500 to-teal-400'
+  },
+  { 
+    id: 'split-pdf', 
+    title: { id: 'Pisah PDF', en: 'Split PDF' }, 
+    desc: { 
+      id: 'Ambil halaman tertentu atau pecah dokumen menjadi file terpisah.', 
+      en: 'Extract specific pages or split the document into separate files.' 
+    }, 
+    icon: Scissors, category: 'Populer', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', border_hover: 'hover:border-rose-300', badge: 'from-rose-500 to-pink-400'
+  },
+  { 
+    id: 'edit-pdf', 
+    title: { id: 'Edit PDF', en: 'Edit PDF' }, 
+    desc: { 
+      id: 'Tambahkan teks, gambar, dan coretan pada dokumen PDF di browser.', 
+      en: 'Add text, images, and drawings to PDF documents in the browser.' 
+    }, 
+    icon: FilePenLine, category: 'Populer', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', border_hover: 'hover:border-indigo-300', badge: 'from-indigo-500 to-blue-400'
+  },
+  { 
+    id: 'scan-pdf', 
+    title: { id: 'Scan PDF', en: 'Scan PDF' }, 
+    desc: { 
+      id: 'Scan dokumen fisik pakai kamera HP dan simpan jadi PDF jernih.', 
+      en: 'Scan physical documents using phone camera and save as clear PDF.' 
+    }, 
+    icon: Camera, category: 'Populer', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-500 to-cyan-400'
+  },
 
-  // 2. KONVERSI
-  { id: 'pdf-to-jpg', title: { id: 'PDF ke JPG', en: 'PDF to JPG' }, desc: { id: 'Simpan halaman jadi gambar.', en: 'Save pages as images.' }, icon: Image, category: 'Konversi', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  { id: 'pdf-to-png', title: { id: 'PDF ke PNG', en: 'PDF to PNG' }, desc: { id: 'Simpan PDF jadi PNG.', en: 'Convert PDF to PNG.' }, icon: FileImage, category: 'Konversi', color: 'text-teal-600', bg: 'bg-teal-50' },
-  { id: 'pdf-to-text', title: { id: 'PDF ke Text', en: 'PDF to Text' }, desc: { id: 'Salin tulisan dari PDF.', en: 'Extract text from PDF.' }, icon: FileText, category: 'Konversi', color: 'text-slate-600', bg: 'bg-slate-50' },
-  { id: 'png-to-pdf', title: { id: 'PNG ke PDF', en: 'PNG to PDF' }, desc: { id: 'Gambar PNG jadi PDF.', en: 'Turn PNG into PDF.' }, icon: FileImage, category: 'Konversi', color: 'text-blue-500', bg: 'bg-blue-50' },
-  { id: 'flatten-pdf', title: { id: 'Ratakan PDF', en: 'Flatten PDF' }, desc: { id: 'Kunci elemen interaktif.', en: 'Lock interactive elements.' }, icon: Layers, category: 'Konversi', color: 'text-slate-700', bg: 'bg-slate-100' },
-  { id: 'pdf-to-html', title: { id: 'PDF ke HTML', en: 'PDF to HTML' }, desc: { id: 'PDF jadi halaman web.', en: 'PDF to web page.' }, icon: FileCode, category: 'Konversi', color: 'text-pink-500', bg: 'bg-pink-50' },
+  // KONVERSI
+  { id: 'pdf-to-jpg', title: { id: 'PDF ke JPG', en: 'PDF to JPG' }, desc: { id: 'Simpan setiap halaman PDF menjadi file gambar JPG berkualitas tinggi.', en: 'Save every PDF page as a high-quality JPG image file.' }, icon: Image, category: 'Konversi', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', border_hover: 'hover:border-amber-300', badge: 'from-amber-500 to-yellow-400' },
+  { id: 'pdf-to-png', title: { id: 'PDF ke PNG', en: 'PDF to PNG' }, desc: { id: 'Ubah halaman PDF menjadi gambar PNG dengan latar transparan.', en: 'Convert PDF pages into PNG images with transparent backgrounds.' }, icon: FileImage, category: 'Konversi', color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100', border_hover: 'hover:border-teal-300', badge: 'from-teal-500 to-emerald-400' },
+  { id: 'pdf-to-text', title: { id: 'PDF ke Teks', en: 'PDF to Text' }, desc: { id: 'Ekstrak tulisan dari file PDF menjadi teks biasa yang bisa diedit.', en: 'Extract text from PDF files into editable plain text.' }, icon: FileText, category: 'Konversi', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
+  { id: 'png-to-pdf', title: { id: 'PNG ke PDF', en: 'PNG to PDF' }, desc: { id: 'Satukan kumpulan gambar PNG menjadi satu file PDF dengan mudah.', en: 'Combine a collection of PNG images into a single PDF file easily.' }, icon: FileImage, category: 'Konversi', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', border_hover: 'hover:border-cyan-300', badge: 'from-cyan-500 to-sky-400' },
+  { id: 'flatten-pdf', title: { id: 'Ratakan PDF', en: 'Flatten PDF' }, desc: { id: 'Kunci formulir dan elemen interaktif agar dokumen tidak bisa diedit.', en: 'Lock forms and interactive elements so the document cannot be edited.' }, icon: Layers, category: 'Konversi', color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-100', border_hover: 'hover:border-gray-300', badge: 'from-gray-600 to-slate-500' },
+  { id: 'pdf-to-html', title: { id: 'PDF ke HTML', en: 'PDF to HTML' }, desc: { id: 'Konversi dokumen PDF menjadi halaman web HTML yang responsif.', en: 'Convert PDF documents into responsive HTML web pages.' }, icon: FileCode, category: 'Konversi', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100', border_hover: 'hover:border-pink-300', badge: 'from-pink-500 to-rose-400' },
 
-  // 3. EDIT & ATUR
-  { id: 'rotate-pdf', title: { id: 'Putar PDF', en: 'Rotate PDF' }, desc: { id: 'Perbaiki orientasi halaman.', en: 'Fix page orientation.' }, icon: RefreshCcw, category: 'Edit', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-  { id: 'delete-pages', title: { id: 'Hapus Halaman', en: 'Delete Pages' }, desc: { id: 'Buang halaman.', en: 'Remove pages.' }, icon: Trash2, category: 'Edit', color: 'text-red-500', bg: 'bg-red-50' },
-  { id: 'rearrange-pdf', title: { id: 'Urutkan Halaman', en: 'Rearrange' }, desc: { id: 'Geser urutan halaman.', en: 'Reorder pages.' }, icon: Layers, category: 'Edit', color: 'text-blue-500', bg: 'bg-blue-50' },
-  { id: 'extract-pages', title: { id: 'Ambil Halaman', en: 'Extract Pages' }, desc: { id: 'Simpan halaman pilihan.', en: 'Save selected pages.' }, icon: FileUp, category: 'Edit', color: 'text-cyan-600', bg: 'bg-cyan-50' },
-  { id: 'add-page-numbers', title: { id: 'Nomor Halaman', en: 'Page Numbers' }, desc: { id: 'Sisipkan nomor otomatis.', en: 'Insert page numbers.' }, icon: BookOpen, category: 'Edit', color: 'text-slate-600', bg: 'bg-slate-50' },
-  { id: 'resize-pdf', title: { id: 'Ubah Ukuran', en: 'Resize PDF' }, desc: { id: 'Ganti ukuran kertas (A4).', en: 'Change page size (A4).' }, icon: Maximize, category: 'Edit', color: 'text-pink-600', bg: 'bg-pink-50' },
-  { id: 'add-image-pdf', title: { id: 'Tambah Gambar', en: 'Add Image' }, desc: { id: 'Sisipkan logo/foto.', en: 'Insert logo/photo.' }, icon: FileImage, category: 'Edit', color: 'text-green-600', bg: 'bg-green-50' },
-  { id: 'fill-form', title: { id: 'Isi Formulir', en: 'Fill Forms' }, desc: { id: 'Isi kolom formulir PDF.', en: 'Fill PDF form fields.' }, icon: PenTool, category: 'Edit', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  // EDIT
+  { id: 'rotate-pdf', title: { id: 'Putar PDF', en: 'Rotate PDF' }, desc: { id: 'Putar halaman PDF yang terbalik untuk memperbaiki orientasi dokumen.', en: 'Rotate upside-down PDF pages to fix document orientation.' }, icon: RefreshCcw, category: 'Edit', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100', border_hover: 'hover:border-violet-300', badge: 'from-violet-500 to-purple-400' },
+  { id: 'delete-pages', title: { id: 'Hapus Halaman', en: 'Delete Pages' }, desc: { id: 'Hapus halaman yang tidak diinginkan dari file PDF dengan cepat.', en: 'Quickly remove unwanted pages from your PDF file.' }, icon: Trash2, category: 'Edit', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', border_hover: 'hover:border-rose-300', badge: 'from-rose-500 to-red-400' },
+  { id: 'rearrange-pdf', title: { id: 'Urutkan Halaman', en: 'Rearrange PDF' }, desc: { id: 'Geser dan atur ulang urutan halaman PDF sesuai keinginan Anda.', en: 'Drag and drop to rearrange PDF page order as you wish.' }, icon: Layout, category: 'Edit', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-400 to-sky-300' },
+  { id: 'extract-pages', title: { id: 'Ambil Halaman', en: 'Extract Pages' }, desc: { id: 'Pilih dan simpan halaman tertentu dari PDF menjadi file baru.', en: 'Select and save specific pages from PDF into a new file.' }, icon: FileUp, category: 'Edit', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', border_hover: 'hover:border-emerald-300', badge: 'from-emerald-500 to-green-400' },
+  { id: 'add-page-numbers', title: { id: 'Nomor Halaman', en: 'Page Numbers' }, desc: { id: 'Sisipkan nomor halaman otomatis di header atau footer dokumen.', en: 'Insert automatic page numbers in the document header or footer.' }, icon: BookOpen, category: 'Edit', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', border_hover: 'hover:border-slate-300', badge: 'from-slate-600 to-gray-500' },
+  { id: 'resize-pdf', title: { id: 'Ubah Ukuran PDF', en: 'Resize PDF' }, desc: { id: 'Ubah ukuran kertas PDF (misal: A4 ke Letter) dan skala kontennya.', en: 'Change PDF paper size (e.g. A4 to Letter) and scale content.' }, icon: Maximize, category: 'Edit', color: 'text-fuchsia-600', bg: 'bg-fuchsia-50', border: 'border-fuchsia-100', border_hover: 'hover:border-fuchsia-300', badge: 'from-fuchsia-500 to-pink-400' },
+  { id: 'add-image-pdf', title: { id: 'Tambah Gambar', en: 'Add Image to PDF' }, desc: { id: 'Sisipkan logo atau foto ke dalam halaman PDF di posisi yang diinginkan.', en: 'Insert logo or photo into PDF pages at desired position.' }, icon: FileImage, category: 'Edit', color: 'text-lime-600', bg: 'bg-lime-50', border: 'border-lime-100', border_hover: 'hover:border-lime-300', badge: 'from-lime-500 to-green-400' },
+  { id: 'fill-form', title: { id: 'Isi Formulir', en: 'Fill PDF Forms' }, desc: { id: 'Isi kolom teks dan centang kotak pada formulir PDF secara digital.', en: 'Digitally fill text fields and checkboxes on PDF forms.' }, icon: PenTool, category: 'Edit', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', border_hover: 'hover:border-indigo-300', badge: 'from-indigo-500 to-blue-400' },
 
-  // 4. KEAMANAN
-  { id: 'protect-pdf', title: { id: 'Kunci PDF', en: 'Protect PDF' }, desc: { id: 'Pasang password.', en: 'Set password.' }, icon: Lock, category: 'Keamanan', color: 'text-slate-800', bg: 'bg-slate-100' },
-  { id: 'unlock-pdf', title: { id: 'Buka Password', en: 'Unlock PDF' }, desc: { id: 'Hapus password.', en: 'Remove password.' }, icon: Unlock, category: 'Keamanan', color: 'text-pink-600', bg: 'bg-pink-50' },
-  { id: 'watermark-pdf', title: { id: 'Watermark', en: 'Watermark' }, desc: { id: 'Tempel cap transparan.', en: 'Add transparent stamp.' }, icon: BadgeCheck, category: 'Keamanan', color: 'text-red-600', bg: 'bg-red-50' },
-  { id: 'esign-pdf', title: { id: 'Tanda Tangan', en: 'eSign PDF' }, desc: { id: 'Tanda tangan digital.', en: 'Digital signature.' }, icon: FileSignature, category: 'Keamanan', color: 'text-blue-800', bg: 'bg-blue-100' },
+  // KEAMANAN
+  { id: 'protect-pdf', title: { id: 'Kunci PDF', en: 'Protect PDF' }, desc: { id: 'Amankan dokumen rahasia dengan enkripsi password yang kuat.', en: 'Secure confidential documents with strong password encryption.' }, icon: Lock, category: 'Keamanan', color: 'text-slate-800', bg: 'bg-slate-100', border: 'border-slate-200', border_hover: 'hover:border-slate-400', badge: 'from-slate-700 to-gray-600' },
+  { id: 'unlock-pdf', title: { id: 'Buka PDF', en: 'Unlock PDF' }, desc: { id: 'Hapus password dari file PDF agar bisa dibuka tanpa sandi.', en: 'Remove password from PDF file for password-free access.' }, icon: Unlock, category: 'Keamanan', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100', border_hover: 'hover:border-pink-300', badge: 'from-pink-500 to-rose-400' },
+  { id: 'watermark-pdf', title: { id: 'Watermark PDF', en: 'Watermark PDF' }, desc: { id: 'Tempelkan teks transparan untuk melindungi hak cipta dokumen.', en: 'Stamp transparent text to protect document copyright.' }, icon: BadgeCheck, category: 'Keamanan', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-100', border_hover: 'hover:border-red-300', badge: 'from-red-600 to-orange-500' },
+  { id: 'esign-pdf', title: { id: 'Tanda Tangan PDF', en: 'eSign PDF' }, desc: { id: 'Buat dan bubuhkan tanda tangan digital pada dokumen PDF.', en: 'Create and apply digital signature to PDF documents.' }, icon: FileSignature, category: 'Keamanan', color: 'text-blue-800', bg: 'bg-blue-100', border: 'border-blue-100', border_hover: 'hover:border-blue-300', badge: 'from-blue-600 to-cyan-500' }
 ];
 
+// TAB CATEGORIES
 const TAB_CATEGORIES = [
-  { name: 'All', label: { id: 'Semua', en: 'All' }, icon: null },
-  { name: 'Populer', label: { id: 'Populer', en: 'Popular' }, icon: TrendingUp },
-  { name: 'Konversi', label: { id: 'Konversi', en: 'Convert' }, icon: FileText },
-  { name: 'Edit', label: { id: 'Edit & Atur', en: 'Edit & Sort' }, icon: Layers },
-  { name: 'Keamanan', label: { id: 'Keamanan', en: 'Security' }, icon: ShieldCheck },
-];
-
-const COLOR_THEMES = [
-  { border: 'border-blue-200 hover:border-blue-500', bg_grad: 'bg-white hover:bg-blue-50', icon_box: 'bg-white border-blue-100 text-blue-600', icon_hover: 'group-hover:bg-blue-600 group-hover:text-white', title_hover: 'group-hover:text-blue-700', btn_bg: 'text-blue-500 group-hover:bg-blue-600', watermark: 'text-blue-200' },
-  { border: 'border-emerald-200 hover:border-emerald-500', bg_grad: 'bg-white hover:bg-emerald-50', icon_box: 'bg-white border-emerald-100 text-emerald-600', icon_hover: 'group-hover:bg-emerald-600 group-hover:text-white', title_hover: 'group-hover:text-emerald-700', btn_bg: 'text-emerald-500 group-hover:bg-emerald-600', watermark: 'text-emerald-200' },
-  { border: 'border-violet-200 hover:border-violet-500', bg_grad: 'bg-white hover:bg-violet-50', icon_box: 'bg-white border-violet-100 text-violet-600', icon_hover: 'group-hover:bg-violet-600 group-hover:text-white', title_hover: 'group-hover:text-violet-700', btn_bg: 'text-violet-500 group-hover:bg-violet-600', watermark: 'text-violet-200' },
-  { border: 'border-amber-200 hover:border-amber-500', bg_grad: 'bg-white hover:bg-amber-50', icon_box: 'bg-white border-amber-100 text-amber-600', icon_hover: 'group-hover:bg-amber-600 group-hover:text-white', title_hover: 'group-hover:text-amber-700', btn_bg: 'text-amber-500 group-hover:bg-amber-600', watermark: 'text-amber-200' },
+  { name: 'All', label: { id: 'Semua Alat', en: 'All Tools' }, icon: Grid3x3, color: 'from-slate-600 to-gray-500' },
+  { name: 'Populer', label: { id: 'Populer', en: 'Popular' }, icon: Zap, color: 'from-orange-500 to-amber-400' },
+  { name: 'Konversi', label: { id: 'Konversi', en: 'Convert' }, icon: GitMerge, color: 'from-emerald-500 to-teal-400' },
+  { name: 'Edit', label: { id: 'Edit', en: 'Edit' }, icon: Edit3, color: 'from-blue-500 to-indigo-400' },
+  { name: 'Keamanan', label: { id: 'Keamanan', en: 'Security' }, icon: Shield, color: 'from-slate-700 to-gray-600' },
 ];
 
 const UI_TEXT = {
   brand: { id: 'LayananPDF', en: 'PDFServices' },
   home: { id: 'Beranda', en: 'Home' },
-  tools_menu: { id: 'Semua Alat', en: 'All Tools' },
-  hero_title: { id: 'Solusi PDF Lengkap & Gratis', en: 'All-in-One PDF Solution' },
-  hero_desc: { id: 'Kumpulan alat pengelola dokumen yang 100% aman. Semua proses dilakukan di browser Anda (Tanpa Upload Server).', en: 'Secure document management tools. All processing happens in your browser (No Server Uploads).' },
-  search_placeholder: { id: 'Cari alat (misal: Gabung, JPG ke PDF)...', en: 'Search tools (e.g. Merge, JPG to PDF)...' },
+  hero_title: { id: 'Kelola Dokumen PDF Jadi Mudah', en: 'Manage PDF Documents Easily' },
+  hero_desc: { 
+    id: 'Platform lengkap untuk mengubah, mengedit, dan mengatur file PDF Anda. Tanpa instalasi, gratis, dan aman karena file diproses di browser Anda.', 
+    en: 'Complete platform to convert, edit, and organize your PDF files. No installation, free, and secure as files are processed in your browser.' 
+  },
+  search_placeholder: { id: 'Cari alat PDF...', en: 'Search PDF tools...' },
   no_result: { id: 'Alat tidak ditemukan', en: 'No tools found' },
-  most_used: { id: 'Paling Sering Digunakan', en: 'Most Popular Tools' },
-  all_tools: { id: 'Semua Alat PDF', en: 'All PDF Tools' },
-  result_title: { id: 'Hasil Pencarian', en: 'Search Results' },
-  sponsored: { id: 'Disponsori', en: 'Sponsored' },
-  change_lang: { id: 'Ganti Bahasa', en: 'Change Language' },
-  free: { id: 'Gratis', en: 'Free' },
-  
+  most_used: { id: 'Akses Cepat', en: 'Quick Access' },
+  search_result_hero: { id: 'Hasil Pencarian', en: 'Search Results' },
+  sponsored: { id: 'Iklan', en: 'Ad' },
+  change_lang: { id: 'Bahasa', en: 'Language' },
   promo_title: { id: 'Layanan Kami Lainnya', en: 'Our Other Services' },
-  footer_desc: { id: 'LayananPDF adalah platform pengelola dokumen gratis, aman, dan tanpa batasan. Proses lokal di browser menjamin privasi Anda.', en: 'LayananPDF is a free, secure, and unlimited document management platform. Local browser processing ensures your privacy.' },
-  footer_quick: { id: 'Menu Cepat', en: 'Quick Links' },
-  footer_legal: { id: 'Legalitas', en: 'Legal' },
-  privacy: { id: 'Kebijakan Privasi', en: 'Privacy Policy' },
-  terms: { id: 'Syarat & Ketentuan', en: 'Terms & Conditions' },
+  footer_desc: { id: 'LayananPDF menyediakan solusi pengelolaan dokumen digital yang aman dan efisien.', en: 'LayananPDF provides secure and efficient digital document solutions.' },
+  footer_links: { id: 'Tautan', en: 'Links' },
+  footer_legal: { id: 'Legal', en: 'Legal' },
+  privacy: { id: 'Privasi', en: 'Privacy' },
+  terms: { id: 'Syarat', en: 'Terms' },
   disclaimer: { id: 'Penafian', en: 'Disclaimer' },
   copyright: { id: 'Hak Cipta', en: 'Copyright' }
 };
@@ -94,18 +134,45 @@ const OTHER_WEBSITES = [
   {
     name: 'LatihanOnline.com',
     url: 'https://www.latihanonline.com',
-    desc: { id: 'Bank Soal & Ujian Sekolah Gratis (SD-SMK). Pusat latihan soal online terlengkap dengan pembahasan materi & jawaban.', en: 'Free School Exam & Question Bank. Complete online practice center with materials & answers.' },
-    color: 'bg-orange-50 border-orange-200 text-orange-700',
+    desc: { 
+      id: 'Bank Soal & Ujian Sekolah Gratis (SD-SMK). Pusat latihan terlengkap dengan pembahasan materi & jawaban.', 
+      en: 'Free School Exam & Question Bank. Complete practice center with materials & answers.' 
+    },
+    color: 'text-orange-600', 
+    bg_hover: 'hover:bg-orange-50',
+    border_hover: 'hover:border-orange-200',
+    bg_icon: 'bg-orange-100',
     icon: BookOpen
   },
   {
     name: 'LayananDokumen.com',
     url: 'https://www.layanandokumen.com',
-    desc: { id: 'Pusat Administrasi & Surat Resmi. Platform penyusunan dokumen administratif, invoice UMKM, dan legalitas dasar.', en: 'Administrative & Official Letter Center. Platform for drafting administrative documents, invoices, and basic legality.' },
-    color: 'bg-blue-50 border-blue-200 text-blue-700',
+    desc: { 
+      id: 'Pusat Administrasi & Surat Resmi. Platform penyusunan dokumen administratif dan invoice otomatis.', 
+      en: 'Administrative & Official Letter Center. Platform for drafting administrative documents and automatic invoices.' 
+    },
+    color: 'text-blue-600', 
+    bg_hover: 'hover:bg-blue-50',
+    border_hover: 'hover:border-blue-200',
+    bg_icon: 'bg-blue-100',
     icon: FileText
   }
 ];
+
+// Skeleton Component
+const ToolCardSkeleton = () => (
+  <div className="h-[180px] p-5 rounded-lg bg-white border border-slate-200 flex flex-col justify-between relative animate-pulse">
+    <div>
+      <div className="flex items-start justify-between mb-3">
+          <div className="w-10 h-10 rounded-lg bg-slate-200"></div>
+          <div className="w-4 h-4 rounded bg-slate-200"></div>
+      </div>
+      <div className="h-5 bg-slate-200 rounded w-3/4 mb-2"></div>
+      <div className="h-3 bg-slate-200 rounded w-full mb-1"></div>
+      <div className="h-3 bg-slate-200 rounded w-2/3"></div>
+    </div>
+  </div>
+);
 
 export default function Home() {
   const [lang, setLang] = useState<Language>('id');
@@ -117,32 +184,36 @@ export default function Home() {
   useEffect(() => {
     const saved = localStorage.getItem('user-lang') as Language;
     if (saved) setLang(saved);
-    setIsLoaded(true);
+    setTimeout(() => setIsLoaded(true), 100); 
   }, []);
 
   const toggleLang = () => {
     const newLang = lang === 'id' ? 'en' : 'id';
     setLang(newLang);
     localStorage.setItem('user-lang', newLang);
-    window.location.reload();
   };
 
   const getTool = (id: string) => TOOLS.find(t => t.id === id);
   const jpgTool = getTool('jpg-to-pdf');
   const mergeTool = getTool('merge-pdf');
+  const compressTool = getTool('compress-pdf');
+  const splitTool = getTool('split-pdf');
 
+  // Filter Logic
   const filteredTools = TOOLS.filter(tool => {
+    if (!tool) return false;
     const title = tool.title[lang].toLowerCase();
     const desc = tool.desc[lang].toLowerCase();
     const query = search.toLowerCase();
     const matchesSearch = title.includes(query) || desc.includes(query);
-
     let matchesTab = true;
-    if (activeTab !== 'All') {
-      matchesTab = tool.category === activeTab;
-    }
+    if (activeTab !== 'All') matchesTab = tool.category === activeTab;
     return matchesSearch && matchesTab;
   });
+
+  const quickAccessTools = search 
+    ? filteredTools.slice(0, 6) 
+    : [jpgTool, mergeTool, compressTool, splitTool].filter(t => t);
 
   const renderGridItems = () => {
     const items: React.ReactNode[] = [];
@@ -152,15 +223,17 @@ export default function Home() {
     while (toolIndex < tools.length) {
       const currentSlot = items.length; 
       
+      // IKLAN
       if (activeTab === 'All' && !search) {
          if (currentSlot === 4 || currentSlot === 10 || currentSlot === 16 || currentSlot === 22) {
             items.push(
-              <div key={`ad-slot-${currentSlot}`} className="h-[200px] md:h-[280px] col-span-2 md:col-span-1 bg-white/50 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center relative overflow-hidden shadow-sm backdrop-blur-sm">
-                 <div className="absolute top-2 right-2 px-2 py-0.5 bg-white border border-slate-200 rounded text-[9px] font-bold text-slate-400 uppercase tracking-wider z-10">Ad</div>
-                 <div className="scale-75 md:scale-90 origin-center z-10">
+              <div key={`ad-slot-${currentSlot}`} className="h-[200px] col-span-2 md:col-span-1 rounded-lg border border-slate-200 flex flex-col items-center justify-center relative overflow-hidden bg-white">
+                 <div className="absolute top-2 right-2 px-2 py-1 bg-slate-100 rounded text-xs font-medium text-slate-600 uppercase tracking-wide z-10">
+                   {UI_TEXT.sponsored[lang]}
+                 </div>
+                 <div className="scale-75 origin-center z-10">
                     <AdsterraBanner height={250} width={300} data_key="56cc493f61de5edcff82fc45841616e5" />
                  </div>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 z-10">{UI_TEXT.sponsored[lang]}</p>
               </div>
             );
             continue;
@@ -168,73 +241,72 @@ export default function Home() {
       }
 
       const tool = tools[toolIndex];
-      const theme = COLOR_THEMES[toolIndex % COLOR_THEMES.length];
+      if (tool) {
+        items.push(
+            <Link href={`/tools/${tool.id}`} key={tool.id} className="block h-[200px] group">
+            <div className={`h-full p-5 rounded-lg border ${tool.border} ${tool.border_hover} transition-all duration-200 flex flex-col justify-between relative cursor-pointer ${tool.bg}`}>
+                
+                {/* DEKORASI: IKON TRANSPARAN */}
+                <div className="absolute -bottom-4 -right-4 pointer-events-none">
+                    <tool.icon className={`w-24 h-24 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-300 ${tool.color}`} />
+                </div>
 
-      items.push(
-        <Link href={`/tools/${tool.id}`} key={tool.id} className="block h-[200px] md:h-[280px]">
-          <div className={`group h-full p-4 md:p-6 rounded-2xl border ${theme.border} hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative cursor-pointer overflow-hidden ${theme.bg_grad}`}>
-            <div className="absolute -bottom-4 -right-4 md:-bottom-10 md:-right-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12">
-               <tool.icon strokeWidth={1} className={`w-24 h-24 md:w-48 md:h-48 opacity-10 md:opacity-20 ${theme.watermark}`} />
+                <div className="relative z-10">
+                    {/* Category Badge */}
+                    <div className={`absolute -top-1 -right-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full text-white bg-gradient-to-r ${tool.badge} opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        {tool.category}
+                    </div>
+
+                    <div className="flex items-start justify-between mb-3">
+                        <div className={`w-12 h-12 flex items-center justify-center rounded-lg shadow-sm bg-white ${tool.color} group-hover:scale-105 transition-transform duration-200`}>
+                            <tool.icon className="w-6 h-6" strokeWidth={2} />
+                        </div>
+                        <ArrowRight size={18} className="text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                    </div>
+
+                    <div>
+                        <h3 className="font-bold text-lg text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
+                            {tool.title[lang]}
+                        </h3>
+                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                            {tool.desc[lang]}
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div className="relative z-10">
-              <div className={`w-8 h-8 md:w-12 md:h-12 flex items-center justify-center border rounded-lg md:rounded-xl mb-3 md:mb-4 transition-all duration-300 shadow-sm ${theme.icon_box} ${theme.icon_hover}`}>
-                <tool.icon className="w-4 h-4 md:w-6 md:h-6" strokeWidth={2} />
-              </div>
-              <h3 className={`font-bold text-sm md:text-lg text-slate-800 mb-1 md:mb-2 line-clamp-2 ${theme.title_hover}`}>{tool.title[lang]}</h3>
-              <p className="text-[10px] md:text-xs text-slate-600 leading-relaxed font-medium line-clamp-2 md:line-clamp-none">{tool.desc[lang]}</p>
-            </div>
-            <div className="relative z-10 flex items-center justify-between mt-2 pt-2 md:pt-4 border-t border-slate-200/50">
-               <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 bg-white/60 px-1.5 py-0.5 md:px-2 md:py-1 rounded-full backdrop-blur-sm border border-slate-100">
-                 <Zap size={10} className="text-amber-500 fill-amber-500"/> {UI_TEXT.free[lang]}
-               </span>
-               <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full bg-white border border-slate-100 flex items-center justify-center group-hover:text-white transition-all shadow-sm ${theme.btn_bg}`}>
-                  <ArrowRight size={14} />
-               </div>
-            </div>
-          </div>
-        </Link>
-      );
+            </Link>
+        );
+      }
       toolIndex++;
     }
     return items;
   };
 
-  if (!isLoaded) return null;
+  // --- BACKGROUND KOTAK-KOTAK KECIL ---
+  const backgroundPattern = {
+    backgroundImage: `linear-gradient(to right, #f1f5f9 1px, transparent 1px), linear-gradient(to bottom, #f1f5f9 1px, transparent 1px)`,
+    backgroundSize: '16px 16px', // Ukuran kotak kecil 16px
+  };
 
   return (
-    <div className="min-h-screen font-sans text-slate-800 bg-[#F8FAFC] selection:bg-blue-100 selection:text-blue-700 flex flex-col overflow-x-hidden relative">
+    <div className="min-h-screen font-sans text-slate-800 bg-white flex flex-col overflow-x-hidden" style={backgroundPattern}>
       
-      {/* --- BACKGROUND PATTERN (KOTAK-KOTAK BIRU TEGAS) --- */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-         <div className="absolute inset-0 bg-[linear-gradient(to_right,#bfdbfe_1px,transparent_1px),linear-gradient(to_bottom,#bfdbfe_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_0%,#000_80%,transparent_100%)] opacity-70"></div>
-      </div>
-
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 shrink-0 shadow-sm relative">
-        <div className="max-w-[1440px] mx-auto px-6 md:px-12 h-full flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm">
+      {/* FLOATING NAVBAR (MELAYANG) */}
+      <header className="fixed top-4 left-0 right-0 z-50 mx-auto max-w-7xl px-4 md:px-6">
+        <div className="bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl h-16 shadow-sm flex items-center justify-between px-6">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="bg-slate-900 text-white p-1.5 rounded-lg shadow-sm">
               <FileImage className="w-5 h-5" />
             </div>
-            <span className="font-bold text-lg tracking-tight text-slate-900 italic uppercase">
+            <span className="font-bold text-lg tracking-tight text-slate-900">
               Layanan<span className="text-blue-600">Dokumen</span>
             </span>
           </Link>
 
+          {/* Links Cleaned Up - Only Language Button */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-            {jpgTool && (
-                <Link href={`/tools/${jpgTool.id}`} className="hover:text-blue-600 transition-colors font-bold tracking-tight">
-                    {jpgTool.title[lang]}
-                </Link>
-            )}
-            {mergeTool && (
-                <Link href={`/tools/${mergeTool.id}`} className="hover:text-blue-600 transition-colors font-bold tracking-tight">
-                    {mergeTool.title[lang]}
-                </Link>
-            )}
-            <div className="h-4 w-px bg-slate-200"></div>
-            <button onClick={toggleLang} className="flex items-center gap-1 hover:text-blue-600 font-bold px-3 py-1.5 rounded-full border border-slate-200 text-xs bg-white">
-               <Globe size={12} /> {lang.toUpperCase()}
+            <button onClick={toggleLang} className="flex items-center gap-1 hover:text-blue-600 font-bold px-3 py-1.5 rounded bg-slate-50 border border-slate-200 text-xs uppercase tracking-wide transition-colors">
+               <Globe size={12} /> {lang}
             </button>
           </nav>
           
@@ -243,19 +315,10 @@ export default function Home() {
           </button>
         </div>
 
+        {/* Mobile Menu */}
         {isMobileMenuOpen && (
-            <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-slate-200 p-4 shadow-xl animate-in slide-in-from-top-2 z-50">
-                {jpgTool && (
-                    <Link href={`/tools/${jpgTool.id}`} className="block py-3 font-bold text-slate-700 border-b border-slate-100">
-                        {jpgTool.title[lang]}
-                    </Link>
-                )}
-                {mergeTool && (
-                    <Link href={`/tools/${mergeTool.id}`} className="block py-3 font-bold text-slate-700 border-b border-slate-100">
-                        {mergeTool.title[lang]}
-                    </Link>
-                )}
-                <button onClick={() => { toggleLang(); setIsMobileMenuOpen(false); }} className="w-full text-left py-3 font-bold text-slate-700 flex items-center gap-2">
+            <div className="md:hidden absolute top-20 left-4 right-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-xl z-50">
+                <button onClick={() => { toggleLang(); setIsMobileMenuOpen(false); }} className="w-full text-left py-3 font-medium text-slate-700 flex items-center gap-2">
                     <Globe size={16}/> {UI_TEXT.change_lang[lang]} ({lang.toUpperCase()})
                 </button>
             </div>
@@ -263,79 +326,97 @@ export default function Home() {
       </header>
 
       {/* HERO SECTION */}
-      <section className="relative z-10 pt-8 pb-10 border-b border-slate-200/60 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
+      <section className="pt-32 pb-16 border-b border-slate-200 bg-white/50 backdrop-blur-[1px]">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           
+          {/* LEFT: Intro & Search */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-blue-100 mb-2">
-               <Star size={12} fill="currentColor"/> #1 Free PDF Tools
-            </div>
-            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.2]">
-              {UI_TEXT.hero_title[lang]}
-            </h1>
-            <p className="text-slate-600 text-sm md:text-lg leading-relaxed font-medium max-w-2xl mx-auto lg:mx-0">
-              {UI_TEXT.hero_desc[lang]}
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center lg:justify-start pt-2">
-              {TAB_CATEGORIES.map((tab) => (
-                <button
-                  key={tab.name}
-                  onClick={() => setActiveTab(tab.name)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] uppercase font-black transition-all border tracking-wider ${activeTab === tab.name ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-900'}`}
-                >
-                  {tab.icon && <tab.icon className="w-3 h-3" />}
-                  {tab.label[lang]}
-                </button>
-              ))}
-            </div>
+            {!isLoaded ? (
+                <div className="space-y-4 animate-pulse">
+                    <div className="h-10 bg-slate-200 rounded-lg w-3/4 mx-auto lg:mx-0"></div>
+                    <div className="h-4 bg-slate-200 rounded w-full mx-auto lg:mx-0"></div>
+                    <div className="h-4 bg-slate-200 rounded w-2/3 mx-auto lg:mx-0"></div>
+                    <div className="h-12 bg-slate-200 rounded-xl w-full max-w-lg mx-auto lg:mx-0 mt-6"></div>
+                </div>
+            ) : (
+                <>
+                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                    {UI_TEXT.hero_title[lang]}
+                    </h1>
+                    <p className="text-slate-600 text-sm md:text-base leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
+                    {UI_TEXT.hero_desc[lang]}
+                    </p>
+                    
+                    {/* SEARCH BAR */}
+                    <div className="max-w-lg mx-auto lg:mx-0 relative pt-2">
+                    <div className="relative flex items-center p-1 border-2 border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50/50 transition-all bg-white shadow-sm">
+                        <Search className="text-slate-400 ml-3 shrink-0" size={20} />
+                        <input 
+                            type="text" 
+                            placeholder={UI_TEXT.search_placeholder[lang]}
+                            className="w-full p-3 outline-none text-slate-800 font-medium bg-transparent text-sm placeholder:text-slate-400"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                        {search && (
+                            <button onClick={() => setSearch('')} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                                <X size={18}/>
+                            </button>
+                        )}
+                    </div>
+                    </div>
+
+                    {/* TABS */}
+                    <div className="flex flex-wrap gap-2 justify-center lg:justify-start pt-4">
+                    {TAB_CATEGORIES.map((tab) => (
+                        <button
+                        key={tab.name}
+                        onClick={() => setActiveTab(tab.name)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border shadow-sm ${activeTab === tab.name ? 'bg-slate-800 text-white border-slate-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
+                        >
+                        {tab.icon && <tab.icon className="w-3.5 h-3.5" />}
+                        {tab.label[lang]}
+                        </button>
+                    ))}
+                    </div>
+                </>
+            )}
           </div>
 
-          <div className="lg:col-span-5">
-             <div className="bg-white/80 backdrop-blur border border-slate-200 rounded-2xl p-6 md:p-8 shadow-lg shadow-slate-100">
-                <div className="relative group mb-6">
-                   <div className="relative bg-white rounded-xl flex items-center p-2 border-2 border-slate-200 group-focus-within:border-blue-500 transition-colors shadow-sm">
-                      <Search className="text-slate-400 ml-2 shrink-0 group-focus-within:text-blue-500" size={20} />
-                      <input 
-                        type="text" 
-                        placeholder={UI_TEXT.search_placeholder[lang]}
-                        className="w-full p-2 outline-none text-slate-800 font-medium bg-transparent text-sm placeholder:text-slate-400"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                      />
-                   </div>
-                </div>
-
-                <div>
-                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <TrendingUp size={14} className="text-blue-500"/> {UI_TEXT.most_used[lang]}
-                   </h3>
-                   <div className="space-y-2">
-                      {jpgTool && (
-                          <Link href={`/tools/${jpgTool.id}`} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all group cursor-pointer">
-                             <div className="flex items-center gap-3">
-                                <div className="bg-orange-50 p-2 rounded-lg text-orange-600"><FileImage size={18}/></div>
-                                <div className="text-left">
-                                    <p className="text-xs font-bold text-slate-800 group-hover:text-blue-600">{jpgTool.title[lang]}</p>
-                                    <p className="text-[10px] text-slate-400">{jpgTool.desc[lang]}</p>
-                                </div>
-                             </div>
-                             <ArrowRight size={16} className="text-slate-300 group-hover:text-blue-500"/>
-                          </Link>
-                      )}
-
-                      {mergeTool && (
-                          <Link href={`/tools/${mergeTool.id}`} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all group cursor-pointer">
-                             <div className="flex items-center gap-3">
-                                <div className="bg-purple-50 p-2 rounded-lg text-purple-600"><Layers size={18}/></div>
-                                <div className="text-left">
-                                    <p className="text-xs font-bold text-slate-800 group-hover:text-blue-600">{mergeTool.title[lang]}</p>
-                                    <p className="text-[10px] text-slate-400">{mergeTool.desc[lang]}</p>
-                                </div>
-                             </div>
-                             <ArrowRight size={16} className="text-slate-300 group-hover:text-blue-500"/>
-                          </Link>
-                      )}
-                   </div>
+          {/* RIGHT: Quick Access */}
+          <div className="lg:col-span-5 w-full">
+             <div className={`bg-white/80 border border-slate-200 rounded-2xl p-6 shadow-sm backdrop-blur-sm transition-all ${search ? 'ring-2 ring-blue-100 bg-blue-50/30' : ''}`}>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                   {search ? (
+                       <><Search size={14} className="text-blue-500"/> {UI_TEXT.search_result_hero[lang]}</>
+                   ) : (
+                       <><Star size={12} className="text-orange-500 fill-orange-500"/> {UI_TEXT.most_used[lang]}</>
+                   )}
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                   {!isLoaded ? (
+                       [1,2,3,4].map(i => <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse border border-slate-200"></div>)
+                   ) : quickAccessTools.length > 0 ? (
+                       quickAccessTools.map((tool) => (
+                        tool && (
+                            <Link href={`/tools/${tool.id}`} key={tool.id} className="group flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all cursor-pointer">
+                            <div className={`p-2.5 rounded-lg shadow-sm bg-white ${tool.color} group-hover:scale-110 transition-transform shrink-0`}>
+                                <tool.icon size={18} strokeWidth={2}/>
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-800 group-hover:text-blue-700 truncate transition-colors">{tool.title[lang]}</p>
+                                <p className="text-[10px] text-slate-400 truncate">{tool.category}</p>
+                            </div>
+                            </Link>
+                        )
+                       ))
+                   ) : (
+                       <div className="col-span-2 text-center py-8 text-slate-400 text-xs font-bold uppercase">
+                           <SearchX size={24} className="mx-auto mb-2 opacity-50"/>
+                           {UI_TEXT.no_result[lang]}
+                       </div>
+                   )}
                 </div>
              </div>
           </div>
@@ -343,72 +424,72 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- IKLAN TENGAH (PC ONLY) --- */}
-      <div className="hidden lg:flex w-full justify-center py-6 bg-slate-50/50 border-b border-slate-100 relative z-10">
+      {/* --- IKLAN TENGAH (PC) --- */}
+      <div className="hidden lg:flex w-full justify-center py-8 border-b border-slate-200 bg-slate-50/30">
          <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
       </div>
 
-      {/* --- GRID AREA --- */}
-      <div className="flex-1 w-full max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20 py-8 flex gap-8 relative z-10">
+      {/* --- MAIN TOOLS GRID --- */}
+      <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-12 flex gap-8">
         
         {/* SKYSCRAPER KIRI */}
-        <div className="hidden xl:block w-[160px] sticky top-24 h-fit">
+        <aside className="hidden xl:block w-[160px] sticky top-24 h-fit">
            <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
-        </div>
+        </aside>
 
         {/* CONTENT AREA */}
-        <div className="flex-1 flex flex-col gap-8 min-w-0">
-            {/* Iklan Mobile Top */}
+        <div className="flex-1 flex flex-col gap-12 min-w-0">
             <div className="md:hidden flex justify-center">
                  <AdsterraBanner height={50} width={320} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
             </div>
 
             <main className="min-h-[400px]">
-              {filteredTools.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+              {!isLoaded ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                      {[1,2,3,4,5,6,7,8].map(i => <ToolCardSkeleton key={i} />)}
+                  </div>
+              ) : filteredTools.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                   {renderGridItems()}
                 </div>
               ) : (
-                <div className="text-center py-10 bg-white border border-dashed border-slate-300 rounded-2xl">
-                  <p className="text-slate-400 text-sm font-bold uppercase">{UI_TEXT.no_result[lang]}</p>
+                <div className="text-center py-20 bg-white border-2 border-dashed border-slate-200 rounded-3xl">
+                  <SearchX size={48} className="mx-auto mb-4 text-slate-300"/>
+                  <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">{UI_TEXT.no_result[lang]}</p>
                 </div>
               )}
             </main>
 
-            {/* Iklan Bawah */}
-            <div className="w-full flex justify-center mt-auto">
+            <div className="w-full flex justify-center mt-auto pt-4 border-t border-slate-200">
               <AdsterraBanner height={90} width={728} data_key="c0fd3ef02cfd2ffa7fda180dcda83f73" />
             </div>
         </div>
 
         {/* SKYSCRAPER KANAN */}
-        <div className="hidden xl:block w-[160px] sticky top-24 h-fit">
+        <aside className="hidden xl:block w-[160px] sticky top-24 h-fit">
            <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
-        </div>
+        </aside>
 
       </div>
 
       {/* --- CROSS PROMOTION --- */}
-      <section className="py-16 px-4 bg-gradient-to-b from-[#F8FAFC] to-white border-t border-slate-200 mt-16 relative z-10">
-          <div className="max-w-5xl mx-auto">
+      <section className="py-16 px-6 bg-white border-t border-slate-200">
+          <div className="max-w-4xl mx-auto">
               <div className="text-center mb-10">
-                  <h3 className="text-2xl font-black text-slate-800 mb-2">{UI_TEXT.promo_title[lang]}</h3>
-                  <div className="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
+                  <h3 className="text-xl font-black text-slate-800 mb-2">{UI_TEXT.promo_title[lang]}</h3>
+                  <div className="h-1 w-12 bg-blue-600 mx-auto rounded-full"></div>
               </div>
-              
               <div className="grid md:grid-cols-2 gap-6">
                   {OTHER_WEBSITES.map((site, idx) => (
-                      <a href={site.url} target="_blank" rel="noopener noreferrer" key={idx} className={`group block p-6 rounded-2xl border-2 transition-all hover:-translate-y-1 hover:shadow-xl ${site.color} hover:bg-white bg-white`}>
-                          <div className="flex items-start gap-4">
-                              <div className={`p-3 rounded-xl ${site.color} bg-opacity-20`}>
-                                  <site.icon size={32} />
-                              </div>
-                              <div>
-                                  <h4 className="font-bold text-lg text-slate-900 group-hover:text-blue-600 flex items-center gap-2">
-                                      {site.name} <ExternalLink size={14} className="opacity-50"/>
-                                  </h4>
-                                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">{site.desc[lang]}</p>
-                              </div>
+                      <a href={site.url} target="_blank" rel="noopener noreferrer" key={idx} className={`group flex items-start gap-5 p-5 rounded-2xl border border-slate-200 transition-all hover:shadow-lg hover:-translate-y-0.5 bg-white hover:border-blue-300 relative overflow-hidden`}>
+                          <div className={`p-3 rounded-xl shadow-sm ${site.bg_icon} shrink-0`}>
+                              <site.icon size={28} strokeWidth={2} />
+                          </div>
+                          <div>
+                              <h4 className={`font-bold text-base text-slate-900 group-hover:text-blue-700 flex items-center gap-2 transition-colors`}>
+                                  {site.name} <ExternalLink size={14} className="opacity-40 group-hover:opacity-100"/>
+                              </h4>
+                              <p className="text-sm text-slate-600 mt-2 leading-relaxed font-medium">{site.desc[lang]}</p>
                           </div>
                       </a>
                   ))}
@@ -417,36 +498,35 @@ export default function Home() {
       </section>
 
       {/* --- FOOTER --- */}
-      <footer className="bg-white border-t border-slate-200 py-12 relative z-10">
+      <footer className="bg-slate-50 border-t border-slate-200 pt-12 pb-8">
         <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-8">
            <div className="md:col-span-2">
-               <div className="font-black text-slate-900 text-xl mb-4 flex items-center gap-2">
-                   <div className="bg-blue-600 text-white p-1 rounded"><FileText size={18}/></div>
-                   {UI_TEXT.brand[lang]}<span className="text-blue-600">.com</span>
+               <div className="font-black text-slate-900 text-lg mb-4 flex items-center gap-2">
+                   <div className="bg-slate-800 text-white p-1 rounded-lg shadow-sm"><FileText size={18}/></div>
+                   {UI_TEXT.brand[lang]}
                </div>
-               <p className="text-slate-500 text-sm leading-relaxed max-w-sm">{UI_TEXT.footer_desc[lang]}</p>
+               <p className="text-slate-500 text-sm leading-relaxed max-w-sm font-medium">{UI_TEXT.footer_desc[lang]}</p>
            </div>
            
            <div>
-               <h4 className="font-bold text-slate-900 mb-4">{UI_TEXT.footer_quick[lang]}</h4>
-               <ul className="space-y-2 text-sm text-slate-500">
+               <h4 className="font-bold text-slate-900 mb-4 text-xs uppercase tracking-widest">{UI_TEXT.footer_links[lang]}</h4>
+               <ul className="space-y-2.5 text-sm text-slate-500 font-medium">
                    <li><Link href="/" className="hover:text-blue-600 transition-colors">{UI_TEXT.home[lang]}</Link></li>
-                   <li><Link href="#all-tools" className="hover:text-blue-600 transition-colors">{UI_TEXT.tools_menu[lang]}</Link></li>
                    <li><a href="https://www.latihanonline.com" target="_blank" className="hover:text-blue-600 transition-colors">LatihanOnline</a></li>
                </ul>
            </div>
 
            <div>
-               <h4 className="font-bold text-slate-900 mb-4">{UI_TEXT.footer_legal[lang]}</h4>
-               <ul className="space-y-2 text-sm text-slate-500">
+               <h4 className="font-bold text-slate-900 mb-4 text-xs uppercase tracking-widest">{UI_TEXT.footer_legal[lang]}</h4>
+               <ul className="space-y-2.5 text-sm text-slate-500 font-medium">
                    <li><Link href="/privacy" className="hover:text-blue-600 transition-colors">{UI_TEXT.privacy[lang]}</Link></li>
                    <li><Link href="/terms" className="hover:text-blue-600 transition-colors">{UI_TEXT.terms[lang]}</Link></li>
                    <li><Link href="/disclaimer" className="hover:text-blue-600 transition-colors">{UI_TEXT.disclaimer[lang]}</Link></li>
                </ul>
            </div>
         </div>
-        <div className="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-slate-100 text-center text-xs text-slate-400 font-bold tracking-widest">
-            © 2026 {UI_TEXT.brand[lang]}. {UI_TEXT.copyright[lang]}.
+        <div className="max-w-7xl mx-auto px-6 mt-10 pt-6 border-t border-slate-200 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            © 2026 {UI_TEXT.brand[lang]}. All rights reserved.
         </div>
       </footer>
     </div>

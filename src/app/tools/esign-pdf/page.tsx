@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { 
-  PenTool, CheckCircle2, Download, 
-  X, ArrowLeft, Loader2, Settings2, Eraser, Scaling, Move
+  PenTool, CheckCircle2, Download, Globe, 
+  X, ArrowLeft, Loader2, Settings2, Eraser, Scaling, Move, MousePointer2
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
@@ -15,7 +15,9 @@ if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
 
+// Struktur data untuk menyimpan ingatan coretan
 type Point = { x: number; y: number };
+type Stroke = Point[];
 
 export default function SignPdfPage() {
   // --- STATE UTAMA ---
@@ -25,19 +27,23 @@ export default function SignPdfPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   
-  // --- SIGNATURE CORE (FIXED LAG) ---
+  // --- SIGNATURE CORE ---
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // "Ingatan" Coretan
+  const strokesRef = useRef<Stroke[]>([]); 
+  const currentStrokeRef = useRef<Stroke>([]);
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureImage, setSignatureImage] = useState<string | null>(null);
   const [hasSignature, setHasSignature] = useState(false);
   
-  // SETTINGS
+  // SETTINGS (Slider & Warna)
   const [penColor, setPenColor] = useState('#000000'); 
   const [penWidth, setPenWidth] = useState(3);
   
-  // POSITIONING
+  // POSITIONING (Untuk memindahkan TTD di PDF)
   const [sigScale, setSigScale] = useState(30); 
   const [sigX, setSigX] = useState(50); 
   const [sigY, setSigY] = useState(50); 
@@ -62,22 +68,31 @@ export default function SignPdfPage() {
     localStorage.setItem('user-lang', newLang);
   };
 
+  // Efek Khusus: Ketika Slider/Warna berubah, gambar ulang semua coretan yang tersimpan
+  useEffect(() => {
+    if (hasSignature) {
+        redrawAllStrokes();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [penColor, penWidth]);
+
   const T = {
-    hero_title: { id: 'Tanda Tangan PDF Real-Time', en: 'Real-Time PDF Sign' },
-    hero_desc: { id: 'Tanda tangan super responsif tanpa jeda. Tempel langsung ke PDF.', en: 'Super responsive signature with no lag. Place directly on PDF.' },
+    hero_title: { id: 'Tanda Tangan PDF', en: 'Sign PDF' },
+    hero_desc: { id: 'Tanda tangan super responsif. Atur tebal tipis sesuka hati.', en: 'Super responsive signature. Adjust thickness as you like.' },
     select_btn: { id: 'Pilih File PDF', en: 'Select PDF File' },
     tab_sign: { id: 'Area Tanda Tangan', en: 'Signature Area' },
     tab_preview: { id: 'Pratinjau Dokumen', en: 'Document Preview' },
     draw_hint: { id: 'Tanda Tangan Disini', en: 'Sign Here' },
     lbl_color: { id: 'Warna', en: 'Color' },
-    lbl_size: { id: 'Ukuran', en: 'Size' },
+    lbl_width: { id: 'Ketebalan Pena', en: 'Pen Thickness' },
+    lbl_size: { id: 'Ukuran di PDF', en: 'Size on PDF' },
     save_btn: { id: 'Simpan PDF', en: 'Save PDF' },
     download_btn: { id: 'Download PDF', en: 'Download PDF' },
     back_home: { id: 'Ulangi', en: 'Repeat' },
     cancel: { id: 'Tutup', en: 'Close' },
     loading: { id: 'MEMUAT...', en: 'LOADING...' },
     success_title: { id: 'Berhasil!', en: 'Success!' },
-    drag_hint: { id: 'Tekan & Tahan tanda tangan untuk memindahkan', en: 'Press & Hold signature to move' }
+    drag_hint: { id: 'Tahan tanda tangan untuk memindahkan', en: 'Hold signature to move' }
   };
 
   // --- 1. PROSES PDF ---
@@ -103,57 +118,89 @@ export default function SignPdfPage() {
     } catch (e) { alert("Gagal muat PDF"); setFile(null); } finally { setIsProcessing(false); }
   };
 
-  // --- 2. LOGIKA MENGGAMBAR (DIRECT PAINTING) ---
-  // Ini kunci agar tidak delay. Kita gambar langsung ke context saat mouse bergerak.
+  // --- 2. ENGINE GAMBAR HYBRID (CEPAT + BISA DIEDIT) ---
   
+  // Fungsi Gambar Ulang (Dipanggil saat slider digeser)
+  const redrawAllStrokes = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Bersihkan kanvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Setup Style Terbaru
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = penColor;
+      ctx.lineWidth = penWidth; // Pakai ketebalan terbaru
+
+      // Gambar ulang semua ingatan
+      strokesRef.current.forEach(stroke => {
+          if (stroke.length < 1) return;
+          ctx.beginPath();
+          ctx.moveTo(stroke[0].x, stroke[0].y);
+          for (let i = 1; i < stroke.length; i++) {
+              ctx.lineTo(stroke[i].x, stroke[i].y);
+          }
+          ctx.stroke();
+      });
+
+      // Update gambar hasil untuk ditempel ke PDF
+      setSignatureImage(canvas.toDataURL());
+  };
+
   const getCoords = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
       const rect = canvas.getBoundingClientRect();
       const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-      
-      // Scaling factor (penting jika canvas di-resize CSS)
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
-
-      return {
-          x: (clientX - rect.left) * scaleX,
-          y: (clientY - rect.top) * scaleY
-      };
+      return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   };
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-      e.preventDefault(); // Mencegah scrolling saat touch di HP
+      e.preventDefault(); 
       setIsDrawing(true);
-      setHasSignature(true); // Langsung hilangkan tulisan "Sign Here"
+      setHasSignature(true);
 
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const { x, y } = getCoords(e, canvas);
+      const point = getCoords(e, canvas);
       
+      // Mulai Path Baru di Canvas (Visual Cepat)
       ctx.beginPath();
-      ctx.moveTo(x, y);
+      ctx.moveTo(point.x, point.y);
       ctx.lineWidth = penWidth;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.strokeStyle = penColor;
+
+      // Simpan Titik Awal ke Ingatan
+      currentStrokeRef.current = [point];
   };
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
       if (!isDrawing) return;
-      e.preventDefault(); // Mencegah scroll page saat tanda tangan
+      e.preventDefault(); 
 
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const { x, y } = getCoords(e, canvas);
+      const point = getCoords(e, canvas);
 
-      ctx.lineTo(x, y);
-      ctx.stroke(); // GAMBAR LANGSUNG (INSTAN)
+      // Gambar langsung (Biar ngebut)
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+
+      // Simpan titik ke ingatan
+      currentStrokeRef.current.push(point);
   };
 
   const stopDrawing = () => {
@@ -164,7 +211,11 @@ export default function SignPdfPage() {
       if (canvas) {
           const ctx = canvas.getContext('2d');
           ctx?.closePath();
-          // Simpan hasil gambar ke state untuk ditempel ke PDF
+          
+          // Pindahkan stroke saat ini ke memori permanen
+          strokesRef.current.push([...currentStrokeRef.current]);
+          currentStrokeRef.current = []; // Reset stroke sementara
+          
           setSignatureImage(canvas.toDataURL());
       }
   };
@@ -175,11 +226,16 @@ export default function SignPdfPage() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Hapus Ingatan
+      strokesRef.current = [];
+      currentStrokeRef.current = [];
+      
       setHasSignature(false);
       setSignatureImage(null);
   };
 
-  // --- 3. LOGIKA DRAG & DROP TANDA TANGAN ---
+  // --- 3. LOGIKA DRAG & DROP ---
   const handleStartInteraction = (e: React.MouseEvent | React.TouchEvent, type: 'drag' | 'resize') => {
     e.stopPropagation(); 
     if (!containerRef.current) return;
@@ -382,7 +438,11 @@ export default function SignPdfPage() {
                             ))}
                         </div>
                         <div className="flex-1">
-                            <input type="range" min="1" max="10" value={penWidth} onChange={(e) => setPenWidth(parseInt(e.target.value))} className="w-full accent-blue-600 h-1.5 bg-slate-200 rounded-full cursor-pointer" />
+                            <div className="flex justify-between mb-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">{T.lbl_width[lang]}</label>
+                                <span className="text-[10px] font-bold text-slate-600">{penWidth}px</span>
+                            </div>
+                            <input type="range" min="1" max="15" value={penWidth} onChange={(e) => setPenWidth(parseInt(e.target.value))} className="w-full accent-blue-600 h-1.5 bg-slate-200 rounded-full cursor-pointer" />
                         </div>
                     </div>
 

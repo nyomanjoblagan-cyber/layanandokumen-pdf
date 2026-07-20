@@ -19,10 +19,10 @@ if (typeof window !== 'undefined') {
 
 // Tipe Data Halaman
 interface PageItem {
-  id: string;          
+  id: string;           
   originalIndex: number; 
-  rotation: number;      
-  thumb: string;         
+  rotation: number;       
+  thumb: string;          
 }
 
 export default function OrganizePdfPage() {
@@ -30,7 +30,7 @@ export default function OrganizePdfPage() {
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<PageItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false); 
-  const [isSaving, setIsSaving] = useState(false);         
+  const [isSaving, setIsSaving] = useState(false);          
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   
   // UI & BAHASA
@@ -64,7 +64,7 @@ export default function OrganizePdfPage() {
     
     // Editor
     editor_title: { id: 'Editor Halaman', en: 'Page Editor' },
-    total_pages: { id: 'Total Halaman', en: 'Total Pages' },
+    total_pages: { id: 'Halaman', en: 'Pages' },
     info_drag: { id: 'Tips: Geser kartu untuk ubah urutan.', en: 'Tip: Drag cards to reorder.' },
     info_actions: { id: 'Gunakan tombol di bawah halaman untuk Putar/Hapus.', en: 'Use buttons below page to Rotate/Delete.' },
     
@@ -111,9 +111,12 @@ export default function OrganizePdfPage() {
         const totalPages = pdf.numPages;
         const newPages: PageItem[] = [];
 
-        for (let i = 1; i <= totalPages; i++) {
+        // Limit preview max 50 halaman untuk performa
+        const limit = Math.min(totalPages, 50);
+
+        for (let i = 1; i <= limit; i++) {
             const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 0.3 }); // Thumbnail scale
+            const viewport = page.getViewport({ scale: 0.25 }); // Resolusi Rendah (Thumbnail)
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             
@@ -186,7 +189,6 @@ export default function OrganizePdfPage() {
         }
 
         const pdfBytes = await newPdf.save();
-        // Fix Blob Type
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
@@ -211,7 +213,7 @@ export default function OrganizePdfPage() {
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans relative selection:bg-blue-100 selection:text-blue-700 flex flex-col overflow-hidden">
       
       {/* NAVBAR */}
-      <nav className="bg-white border-b border-slate-200 h-14 md:h-16 px-4 md:px-6 flex items-center justify-between sticky top-0 z-50 shrink-0 shadow-sm">
+      <nav className="bg-white border-b border-slate-200 h-16 px-4 md:px-6 flex items-center justify-between sticky top-0 z-50 shrink-0 shadow-sm">
         <Link href="/" className="flex items-center gap-2 group">
           <div className="bg-blue-600 text-white p-1 md:p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform"><Layout size={18} /></div>
           <span className="font-bold text-lg md:text-xl tracking-tight text-slate-900 italic uppercase">
@@ -229,12 +231,12 @@ export default function OrganizePdfPage() {
         </div>
       </nav>
 
-      <main className="flex-1 relative z-10 flex flex-col h-[calc(100dvh-56px)] md:h-auto overflow-y-auto">
+      <main className="flex-1 relative z-10 flex flex-col h-[calc(100dvh-56px)] md:h-auto">
         
         {/* STATE 1: LANDING */}
         {!file && (
           <div 
-            className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-all ${isDraggingOver ? 'bg-blue-50/50' : ''}`}
+            className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition-all overflow-y-auto ${isDraggingOver ? 'bg-blue-50/50' : ''}`}
             onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
             onDragLeave={() => setIsDraggingOver(false)}
             onDrop={handleDrop}
@@ -320,37 +322,42 @@ export default function OrganizePdfPage() {
           </div>
         )}
 
-        {/* STATE 3: EDITOR (DRAG & DROP) */}
+        {/* STATE 3: EDITOR (GRID REORDER) */}
         {file && !pdfUrl && (
-          <div className="flex flex-col h-full md:flex-row md:h-auto md:p-6 md:gap-6 max-w-7xl mx-auto w-full">
+          <div className="w-full max-w-[1400px] mx-auto flex gap-6 px-0 md:px-4 lg:px-8 h-[calc(100vh-64px)] md:h-auto">
             
+            {/* Iklan Kiri Desktop */}
+            <div className="hidden xl:block sticky top-20 h-fit pt-6">
+                <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
+            </div>
+
             <div className="flex-1 flex flex-col h-full bg-slate-50 md:bg-white md:rounded-3xl md:shadow-xl md:border border-slate-200 overflow-hidden">
-                
                 {/* TOOLBAR */}
-                <div className="p-4 md:p-6 border-b border-slate-100 bg-white sticky top-0 z-20 flex items-center justify-between shrink-0 shadow-sm">
-                    <div>
-                        <h3 className="font-bold text-sm md:text-lg text-slate-800 flex items-center gap-2">
-                           <MousePointer2 className="text-blue-500" size={20}/> {T.editor_title[lang]}
-                        </h3>
-                        <p className="text-[10px] md:text-xs text-slate-400 font-bold mt-1">
-                           {pages.length} {T.total_pages[lang]}
-                        </p>
+                <div className="p-4 md:p-6 border-b border-slate-100 bg-white sticky top-0 z-20 flex flex-col md:flex-row md:items-center justify-between shrink-0 gap-4 shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <div>
+                            <h3 className="font-bold text-sm md:text-lg text-slate-800 flex items-center gap-2">
+                               <MousePointer2 className="text-blue-600" size={20}/> {T.editor_title[lang]}
+                            </h3>
+                            <p className="text-[10px] md:text-xs text-slate-400 font-bold mt-1">
+                                <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{pages.length}</span> {T.total_pages[lang]}
+                            </p>
+                        </div>
                     </div>
-                    
-                    <button onClick={handleSave} disabled={isSaving} className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all flex items-center gap-2">
+
+                    <button onClick={handleSave} disabled={isSaving} className="hidden md:flex px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-blue-200 active:scale-95 transition-all items-center gap-2">
                         {isSaving ? <Loader2 className="animate-spin" size={16}/> : <Save size={16}/>}
                         {T.save_btn[lang]}
                     </button>
                 </div>
 
                 {/* GRID CONTENT */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                    
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 pb-32 md:pb-6">
                     {/* INFO BOX */}
                     <div className="mb-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
                         <Info className="text-blue-600 shrink-0 mt-0.5" size={20} />
-                        <div className="text-xs md:text-sm text-blue-700 space-y-1">
-                            <p className="font-bold">{T.info_drag[lang]}</p>
+                        <div className="text-xs md:text-sm text-blue-700 font-medium">
+                            <p className="font-bold mb-1">{T.info_drag[lang]}</p>
                             <p className="opacity-90">{T.info_actions[lang]}</p>
                         </div>
                     </div>
@@ -358,7 +365,7 @@ export default function OrganizePdfPage() {
                     <DragDropContext onDragEnd={onDragEnd}>
                         <Droppable droppableId="pages-grid" direction="horizontal">
                             {(provided) => (
-                                <div {...provided.droppableProps} ref={provided.innerRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 pb-24">
+                                <div {...provided.droppableProps} ref={provided.innerRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                     {pages.map((page, idx) => (
                                         <Draggable key={page.id} draggableId={page.id} index={idx}>
                                             {(provided, snapshot) => (
@@ -422,9 +429,20 @@ export default function OrganizePdfPage() {
                 </div>
             </div>
 
-            {/* IKLAN KANAN (DESKTOP) */}
-            <div className="hidden xl:block w-[160px] shrink-0 sticky top-20 h-fit pt-6">
+            {/* Iklan Kanan Desktop */}
+            <div className="hidden xl:block sticky top-20 h-fit pt-6">
                 <AdsterraBanner height={600} width={160} data_key="cd8a6750a2f2844ce836653aab3c7a96" />
+            </div>
+
+            {/* FAB Mobile */}
+            <div className="md:hidden fixed bottom-6 right-6 z-50">
+                <button 
+                    onClick={handleSave} 
+                    disabled={isSaving}
+                    className="h-14 w-14 rounded-full bg-blue-600 text-white shadow-2xl shadow-blue-400/50 flex items-center justify-center active:scale-90 transition-transform disabled:bg-slate-400 disabled:shadow-none"
+                >
+                    {isSaving ? <Loader2 className="animate-spin" size={24}/> : <Save size={24}/>}
+                </button>
             </div>
 
           </div>

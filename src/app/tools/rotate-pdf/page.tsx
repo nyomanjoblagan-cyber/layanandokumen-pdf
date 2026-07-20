@@ -5,12 +5,12 @@ import { PDFDocument, degrees } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { 
   RefreshCcw, RefreshCw, CheckCircle2, Download, Globe, 
-  X, ArrowLeft, Loader2, RotateCw, Save
+  X, ArrowLeft, Loader2, RotateCw, Save, MousePointer2
 } from 'lucide-react';
 import Link from 'next/link';
 import AdsterraBanner from '@/components/AdsterraBanner';
 
-// 1. WORKER STABIL (Wajib)
+// 1. SETUP WORKER STABIL (Wajib)
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
@@ -19,7 +19,7 @@ export default function RotatePdfPage() {
   // STATE UTAMA
   const [file, setFile] = useState<File | null>(null);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
-  const [rotations, setRotations] = useState<number[]>([]); // Array rotasi per halaman (0, 90, 180, 270)
+  const [rotations, setRotations] = useState<number[]>([]); // Menyimpan sudut rotasi per halaman
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -102,12 +102,18 @@ export default function RotatePdfPage() {
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
         const totalPages = pdf.numPages;
-        const thumbs: string[] = [];
-        const initialRotations: number[] = [];
+        
+        // Inisialisasi array rotasi dengan 0 untuk SEMUA halaman
+        setRotations(new Array(totalPages).fill(0));
 
-        for (let i = 1; i <= totalPages; i++) {
+        const thumbs: string[] = [];
+        
+        // Limit preview max 50 halaman agar browser ringan
+        const limit = Math.min(totalPages, 50);
+
+        for (let i = 1; i <= limit; i++) {
             const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 0.3 }); // Thumbnail kecil
+            const viewport = page.getViewport({ scale: 0.25 }); // Thumbnail kecil & cepat
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             
@@ -116,11 +122,9 @@ export default function RotatePdfPage() {
                 canvas.width = viewport.width;
                 await page.render({ canvasContext: context, viewport } as any).promise;
                 thumbs.push(canvas.toDataURL());
-                initialRotations.push(0); // Default rotasi 0 derajat
             }
         }
         setThumbnails(thumbs);
-        setRotations(initialRotations);
 
     } catch (error) {
         console.error(error);
@@ -135,7 +139,7 @@ export default function RotatePdfPage() {
   const rotatePage = (index: number, direction: 'left' | 'right') => {
     const newRotations = [...rotations];
     const current = newRotations[index];
-    // Rotasi: 0 -> 90 -> 180 -> 270 -> 0
+    // Tambah/Kurang 90 derajat
     newRotations[index] = direction === 'right' ? current + 90 : current - 90;
     setRotations(newRotations);
   };
@@ -155,14 +159,15 @@ export default function RotatePdfPage() {
         const pages = pdfDoc.getPages();
         
         pages.forEach((page, idx) => {
+            // Ambil rotasi user (default 0 jika tidak ada di array)
             const userRotation = rotations[idx] || 0;
             const currentRotation = page.getRotation().angle;
-            // Tambahkan rotasi user ke rotasi asli halaman
+            
+            // Terapkan rotasi baru
             page.setRotation(degrees(currentRotation + userRotation));
         });
 
         const pdfBytes = await pdfDoc.save();
-        // Fix Blob Type
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
@@ -325,12 +330,12 @@ export default function RotatePdfPage() {
                             <button onClick={() => rotateAll('left')} className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[10px] md:text-xs flex items-center gap-2 transition-colors whitespace-nowrap">
                                 <RefreshCcw size={14}/> 
                                 <span className="hidden md:inline">{T.rotate_all_left[lang]}</span>
-                                <span className="md:hidden">All Left</span>
+                                <span className="md:hidden">Semua Kiri</span>
                             </button>
                             <button onClick={() => rotateAll('right')} className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[10px] md:text-xs flex items-center gap-2 transition-colors whitespace-nowrap">
                                 <RefreshCw size={14}/> 
                                 <span className="hidden md:inline">{T.rotate_all_right[lang]}</span>
-                                <span className="md:hidden">All Right</span>
+                                <span className="md:hidden">Semua Kanan</span>
                             </button>
                         </div>
                     </div>
